@@ -25,7 +25,10 @@ export default function Sidebar() {
       {/* Usuario logueado */}
       {usuario && (
         <div className="text-center mb-4">
-          <p className="mb-1 fw-bold">👤 {usuario.nombre}</p>
+          <p className="mb-1 fw-bold">
+            <i className="bi bi-person-circle me-2"></i>
+            {usuario.nombre}
+          </p>
         </div>
       )}
 
@@ -36,16 +39,16 @@ export default function Sidebar() {
           General
         </p>
         <Link to="/dashboard" className="nav-link text-white fw-semibold">
-          📊 Dashboard
+          <i className="bi bi-speedometer2 me-2"></i> Dashboard
         </Link>
         <Link to="/arqueo-caja" className="nav-link text-white fw-semibold">
-          💵 Arqueo de Caja
+          <i className="bi bi-cash-coin me-2"></i> Arqueo de Caja
         </Link>
         <Link to="/ventas" className="nav-link text-white fw-semibold">
-          🛒 Ventas
+          <i className="bi bi-cart-fill me-2"></i> Ventas
         </Link>
         <Link to="/reservas" className="nav-link text-white fw-semibold">
-          📅 Reservas
+          <i className="bi bi-calendar-check me-2"></i> Reservas
         </Link>
 
         {/* Administración */}
@@ -53,13 +56,13 @@ export default function Sidebar() {
           Administración
         </p>
         <Link to="/usuarios" className="nav-link text-white fw-semibold">
-          👥 Gestión de Usuarios
+          <i className="bi bi-people-fill me-2"></i> Gestión de Usuarios
         </Link>
         <Link to="/menu" className="nav-link text-white fw-semibold">
-          🍽️ Gestión de Menú
+          <i className="bi bi-list-ul me-2"></i> Gestión de Menú
         </Link>
         <Link to="/promociones" className="nav-link text-white fw-semibold">
-          🎉 Promociones
+          <i className="bi bi-gift-fill me-2"></i> Promociones
         </Link>
 
         {/* Análisis / Configuración */}
@@ -67,17 +70,17 @@ export default function Sidebar() {
           Análisis & Configuración
         </p>
         <Link to="/reportes" className="nav-link text-white fw-semibold">
-          📑 Reportes
+          <i className="bi bi-bar-chart-line-fill me-2"></i> Reportes
         </Link>
         <Link to="/configuracion" className="nav-link text-white fw-semibold">
-          ⚙️ Configuración del Restaurante
+          <i className="bi bi-gear-fill me-2"></i> Configuración del Restaurante
         </Link>
       </nav>
 
       {/* Cerrar Sesión */}
       <div className="mt-auto">
         <Link to="/login" className="nav-link text-warning fw-bold">
-          🚪 Cerrar Sesión
+          <i className="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
         </Link>
       </div>
     </aside>
