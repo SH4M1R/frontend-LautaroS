@@ -40,3 +40,18 @@
 .read-the-docs {
   color: #888;
 }
+
+.speech-bubble {
+  position: relative;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -10px; /* flechita abajo */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px;
+  border-style: solid;
+  border-color: #f8f9fa transparent transparent transparent; /* fondo del globito */
+}
