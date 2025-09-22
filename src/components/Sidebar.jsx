@@ -10,12 +10,12 @@ export default function Sidebar() {
         d-flex flex-column p-3 text-white 
         bg-dark vh-100 position-fixed top-0 start-0 overflow-auto
       "
-      style={{ width: "220px" }}
+      style={{ width: "240px" }}
     >
       {/* Título */}
       <div className="d-flex align-items-center justify-content-center mb-4">
         <img
-          src="/LogoLautaro.png"   // 👈 ponlo en la carpeta public
+          src="/LogoLautaro.png"
           alt="Logo LautaroS"
           style={{ width: "40px", height: "40px", marginRight: "10px" }}
         />
@@ -30,22 +30,54 @@ export default function Sidebar() {
       )}
 
       {/* Navegación */}
-      <nav className="nav flex-column gap-3">
+      <nav className="nav flex-column gap-2">
+        {/* General */}
+        <p className="text-uppercase text-secondary small fw-bold mt-2 mb-1">
+          General
+        </p>
         <Link to="/dashboard" className="nav-link text-white fw-semibold">
-          Dashboard
+          📊 Dashboard
         </Link>
-        <Link to="/menu" className="nav-link text-white fw-semibold">
-          Menú
+        <Link to="/arqueo-caja" className="nav-link text-white fw-semibold">
+          💵 Arqueo de Caja
         </Link>
         <Link to="/ventas" className="nav-link text-white fw-semibold">
-          Ventas
+          🛒 Ventas
+        </Link>
+        <Link to="/reservas" className="nav-link text-white fw-semibold">
+          📅 Reservas
+        </Link>
+
+        {/* Administración */}
+        <p className="text-uppercase text-secondary small fw-bold mt-3 mb-1">
+          Administración
+        </p>
+        <Link to="/usuarios" className="nav-link text-white fw-semibold">
+          👥 Gestión de Usuarios
+        </Link>
+        <Link to="/menu" className="nav-link text-white fw-semibold">
+          🍽️ Gestión de Menú
+        </Link>
+        <Link to="/promociones" className="nav-link text-white fw-semibold">
+          🎉 Promociones
+        </Link>
+
+        {/* Análisis / Configuración */}
+        <p className="text-uppercase text-secondary small fw-bold mt-3 mb-1">
+          Análisis & Configuración
+        </p>
+        <Link to="/reportes" className="nav-link text-white fw-semibold">
+          📑 Reportes
+        </Link>
+        <Link to="/configuracion" className="nav-link text-white fw-semibold">
+          ⚙️ Configuración del Restaurante
         </Link>
       </nav>
-      
+
       {/* Cerrar Sesión */}
       <div className="mt-auto">
         <Link to="/login" className="nav-link text-warning fw-bold">
-          Cerrar Sesión
+          🚪 Cerrar Sesión
         </Link>
       </div>
     </aside>
