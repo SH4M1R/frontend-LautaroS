@@ -1,17 +1,19 @@
 import React, { createContext, useState, useEffect } from "react";
 
-
+// Crear contexto
 export const MenuContext = createContext();
 
+// Proveedor de datos
 export const MenuProvider = ({ children }) => {
   const [productos, setProductos] = useState([]);
 
+  // Cargar desde localStorage al iniciar
   useEffect(() => {
     const stored = localStorage.getItem("productos");
     if (stored) {
       setProductos(JSON.parse(stored));
     } else {
-
+      // Si no hay nada, carga los iniciales
       const iniciales = [
         { id: 1, nombre: "Lomo Saltado", descripcion: "Clásico plato peruano de carne salteada con cebolla, tomate y papas fritas.", precio: 28.0, categoria: "Plato de Fondo", img: "https://images.pexels.com/photos/28503582/pexels-photo-28503582.jpeg", agotado: false },
         { id: 2, nombre: "Ceviche Clásico", descripcion: "Pesca del día marinada en limón, con cebolla morada, camote y choclo.", precio: 25.0, categoria: "Entrada", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbR3IATt46jQws-6HXvDqSMFoGX9zmUagJGQ&s", agotado: false },
@@ -28,12 +30,14 @@ export const MenuProvider = ({ children }) => {
     }
   }, []);
 
+  // Guardar en localStorage cuando cambien
   useEffect(() => {
     if (productos.length > 0) {
       localStorage.setItem("productos", JSON.stringify(productos));
     }
   }, [productos]);
 
+  // Métodos
   const agregarProducto = (producto) => {
     setProductos([...productos, { ...producto, id: Date.now(), agotado: false }]);
   };

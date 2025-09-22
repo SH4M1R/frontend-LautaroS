@@ -1,4 +1,4 @@
-
+// src/pages/Menu.jsx
 import React, { useState, useEffect } from "react";
 import { Card, Button } from "react-bootstrap";
 
@@ -11,7 +11,7 @@ export default function Menu() {
   }, []);
 
   const addToCart = (producto) => {
-    if (producto.agotado) return;
+    if (producto.agotado) return; // no permitir agregar si está agotado
 
     const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
     carrito.push(producto);

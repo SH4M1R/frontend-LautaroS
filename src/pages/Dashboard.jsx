@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import DashboardCard from "../components/DashboardCard";
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [pedidos, setPedidos] = useState([]);
   const [menu, setMenu] = useState([]);
 
+  // Cargar datos desde LocalStorage (solo si existen)
   useEffect(() => {
     const storedMetrics = JSON.parse(localStorage.getItem("metrics"));
     const storedPedidos = JSON.parse(localStorage.getItem("pedidos"));
@@ -30,6 +32,7 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Guardar datos en LocalStorage (cada vez que algo cambie)
   useEffect(() => {
     localStorage.setItem("metrics", JSON.stringify(metrics));
     localStorage.setItem("pedidos", JSON.stringify(pedidos));

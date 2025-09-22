@@ -11,7 +11,7 @@ function App() {
 
   return (
     <div>
-      {}
+      {/* Sidebar solo si NO estoy en login */}
       {!isLoginPage && <Sidebar />}
 
       <main style={{ marginLeft: isLoginPage ? "0" : "220px", padding: "20px" }}>
@@ -20,7 +20,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/ventas" element={<Ventas />} />
-          {}
+          {/* Si quieres, podrías agregar Home en "/" */}
           <Route path="/" element={<Dashboard />} />
         </Routes>
       </main>
