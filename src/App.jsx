@@ -14,7 +14,7 @@ function App() {
       {/* Sidebar solo si NO estoy en login */}
       {!isLoginPage && <Sidebar />}
 
-      <main style={{ marginLeft: isLoginPage ? "0" : "220px", padding: "20px" }}>
+      <main style={{ marginLeft: isLoginPage ? "0" : "250px", padding: "10px" }}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
