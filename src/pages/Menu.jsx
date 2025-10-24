@@ -21,9 +21,7 @@ export default function Menu() {
       const res = await fetch("http://localhost:9000/api/productos");
       const data = await res.json();
       setProductos(data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const fetchCategorias = async () => {
@@ -31,9 +29,7 @@ export default function Menu() {
       const res = await fetch("http://localhost:9000/api/categorias");
       const data = await res.json();
       setCategorias(data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleDelete = async (id) => {
@@ -43,20 +39,18 @@ export default function Menu() {
     }
   };
 
-  const handleSaveProducto = async (producto) => {
+  const handleSaveProducto = async (formData, idProducto) => {
     try {
       let res;
-      if (producto.idProducto) {
-        res = await fetch(`http://localhost:9000/api/productos/${producto.idProducto}`, {
+      if (idProducto) {
+        res = await fetch(`http://localhost:9000/api/productos/${idProducto}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(producto),
+          body: formData,
         });
       } else {
         res = await fetch("http://localhost:9000/api/productos", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(producto),
+          body: formData,
         });
       }
       await res.json();
@@ -86,9 +80,7 @@ export default function Menu() {
         body: JSON.stringify({ ...prod, estado: !prod.estado }),
       });
       fetchProductos();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const productosFiltrados = productos.filter(
@@ -99,17 +91,16 @@ export default function Menu() {
 
   return (
     <div className="container mt-4">
+      {/* Buscador y botones */}
       <div className="d-flex flex-column flex-md-row align-items-center justify-content-between mb-4 gap-3">
         <div className="d-flex align-items-center gap-2 flex-shrink-0">
           <i className="bi bi-egg-fried fs-2 text-warning"></i>
           <h2 className="mb-0">Menú Lautaro´s</h2>
         </div>
-
         <div className="flex-grow-1 mx-3">
           <input type="text" className="form-control" placeholder="Buscar producto..." value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)} />
         </div>
-
         <div className="d-flex gap-2 flex-wrap">
           <button className="btn btn-success d-flex align-items-center gap-1" onClick={() => setCategoriaModalOpen(true)}>
             <i className="bi bi-plus-lg"></i> Categoria
@@ -125,7 +116,6 @@ export default function Menu() {
         const productosCategoria = productosFiltrados.filter(
           (prod) => prod.categoria?.idCategoria === cat.idCategoria
         );
-
         return (
           <div key={cat.idCategoria} className="mb-5">
             <h4 className="mb-3">{cat.nombreCategoria}</h4>
@@ -137,19 +127,14 @@ export default function Menu() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="text-muted">No hay productos en esta categoría</p>
-            )}
+            ) : <p className="text-muted">No hay productos en esta categoría</p>}
           </div>
         );
       })}
 
       <ModalProducto
         isOpen={isProductoModalOpen}
-        onClose={() => {
-          setProductoModalOpen(false);
-          setProductoEdit(null);
-        }}
+        onClose={() => { setProductoModalOpen(false); setProductoEdit(null); }}
         onSave={handleSaveProducto}
         productoEditado={productoEdit}
         categorias={categorias}
