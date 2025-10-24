@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import userData from "../data/usuario";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -9,47 +8,47 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUsuario } = useAuth();
+  const { login } = useAuth(); // ✅ usar login en vez de setUsuario
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (username === userData.usuario && password === userData.contraseña) {
-      setError("");
-      setUsuario(userData);
-      navigate("/dashboard");
-    } else {
-      setError("Usuario o contraseña incorrectos.");
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  try {
+    const response = await fetch("http://localhost:9000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      setError(errorData.error || "Usuario o contraseña incorrectos.");
+      return;
     }
-  };
+
+    const data = await response.json();
+    login(data);
+    navigate("/dashboard");
+  } catch (err) {
+    setError("No se pudo conectar con el servidor.");
+    console.error(err);
+  }
+};
 
   return (
     <div
-  className="d-flex align-items-center justify-content-center vh-100"
-  style={{
-    background: "linear-gradient(825deg, white, red)",
-  }}
->
-      <div
-        className="card shadow-lg p-4 rounded-4"
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          backgroundColor: "#ffffff",
-        }}
-      >
-        {/* Encabezado */}
+      className="d-flex align-items-center justify-content-center vh-100"
+      style={{ background: "linear-gradient(825deg, white, red)" }}
+    >
+      <div className="card shadow-lg p-4 rounded-4" style={{ width: "100%", maxWidth: "400px", backgroundColor: "#ffffff" }}>
         <div className="text-center mb-4">
-          <i
-            className="bi bi-lock-fill text-danger"
-            style={{ fontSize: "2.5rem" }}
-          ></i>
+          <i className="bi bi-lock-fill text-danger" style={{ fontSize: "2.5rem" }}></i>
           <h3 className="mt-2 fw-bold text-dark">Bienvenido</h3>
           <p className="text-muted mb-0">Inicia sesión para continuar</p>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit}>
-          {/* Usuario */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Usuario</label>
             <div className="input-group">
@@ -67,7 +66,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Contraseña */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Contraseña</label>
             <div className="input-group">
@@ -87,16 +85,11 @@ export default function Login() {
                 className="btn btn-outline-secondary"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                <i
-                  className={`bi ${
-                    showPassword ? "bi-eye-slash-fill" : "bi-eye-fill"
-                  }`}
-                ></i>
+                <i className={`bi ${showPassword ? "bi-eye-slash-fill" : "bi-eye-fill"}`}></i>
               </button>
             </div>
           </div>
 
-          {/* Botón */}
           <div className="d-grid mt-4">
             <button type="submit" className="btn btn-danger fw-semibold">
               <i className="bi bi-box-arrow-in-right me-2"></i>
@@ -104,7 +97,6 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="alert alert-danger mt-3 text-center py-2">
               {error}

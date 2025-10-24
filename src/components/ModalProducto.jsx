@@ -8,6 +8,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     precioVenta: "",
     estado: true,
     categoria: null,
+    imagenFile: null, // <-- para archivo real
   });
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         precioVenta: productoEditado.precioVenta || "",
         estado: productoEditado.estado ?? true,
         categoria: productoEditado.categoria || null,
+        imagenFile: null,
       });
     } else {
       setProducto({
@@ -27,6 +29,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         precioVenta: "",
         estado: true,
         categoria: null,
+        imagenFile: null,
       });
     }
   }, [productoEditado, isOpen]);
@@ -42,18 +45,25 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     setProducto((prev) => ({ ...prev, categoria: categoriaSeleccionada }));
   };
 
+  const handleFileChange = (e) => {
+    setProducto((prev) => ({ ...prev, imagenFile: e.target.files[0] }));
+  };
+
   const handleSubmit = async () => {
     if (!producto.producto || !producto.descripcion || !producto.precioVenta || !producto.categoria) {
       alert("Completa todos los campos obligatorios.");
       return;
     }
 
-    const productoParaGuardar = {
-      ...producto,
-      categoria: { idCategoria: producto.categoria.idCategoria },
-    };
+    const formData = new FormData();
+    formData.append("producto", producto.producto);
+    formData.append("descripcion", producto.descripcion);
+    formData.append("precioVenta", producto.precioVenta);
+    formData.append("estado", producto.estado);
+    formData.append("categoriaId", producto.categoria.idCategoria);
+    if (producto.imagenFile) formData.append("imagen", producto.imagenFile);
 
-    await onSave(productoParaGuardar);
+    await onSave(formData, producto.idProducto);
   };
 
   return (
@@ -86,6 +96,14 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
                 <option key={cat.idCategoria} value={cat.idCategoria}>{cat.nombreCategoria}</option>
               ))}
             </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Imagen</Form.Label>
+            <Form.Control type="file" accept="image/*" onChange={handleFileChange} />
+            {productoEditado?.imagen && (
+              <img src={`http://localhost:9000/images/${productoEditado.imagen}`} alt="preview" style={{ maxWidth: "100px", marginTop: "5px" }} />
+            )}
           </Form.Group>
         </Form>
       </Modal.Body>
