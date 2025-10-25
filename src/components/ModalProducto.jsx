@@ -8,7 +8,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     precioVenta: "",
     estado: true,
     categoria: null,
-    imagenFile: null, // <-- para archivo real
+    imagenFile: null,
   });
 
   useEffect(() => {
@@ -75,25 +75,46 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         <Form>
           <Form.Group className="mb-3">
             <Form.Label>Nombre del Producto</Form.Label>
-            <Form.Control type="text" name="producto" value={producto.producto} onChange={handleChange} />
+            <Form.Control
+              type="text"
+              name="producto"
+              value={producto.producto}
+              onChange={handleChange}
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Descripción</Form.Label>
-            <Form.Control as="textarea" rows={2} name="descripcion" value={producto.descripcion} onChange={handleChange} />
+            <Form.Control
+              as="textarea"
+              rows={2}
+              name="descripcion"
+              value={producto.descripcion}
+              onChange={handleChange}
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Precio de Venta (S/)</Form.Label>
-            <Form.Control type="number" name="precioVenta" value={producto.precioVenta} onChange={handleChange} />
+            <Form.Control
+              type="number"
+              name="precioVenta"
+              value={producto.precioVenta}
+              onChange={handleChange}
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Categoría</Form.Label>
-            <Form.Select value={producto.categoria?.idCategoria || ""} onChange={handleCategoriaChange}>
+            <Form.Select
+              value={producto.categoria?.idCategoria || ""}
+              onChange={handleCategoriaChange}
+            >
               <option value="">Selecciona una categoría</option>
               {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.idCategoria}>{cat.nombreCategoria}</option>
+                <option key={cat.idCategoria} value={cat.idCategoria}>
+                  {cat.nombreCategoria}
+                </option>
               ))}
             </Form.Select>
           </Form.Group>
@@ -101,9 +122,20 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
           <Form.Group className="mb-3">
             <Form.Label>Imagen</Form.Label>
             <Form.Control type="file" accept="image/*" onChange={handleFileChange} />
-            {productoEditado?.imagen && (
-              <img src={`http://localhost:9000/images/${productoEditado.imagen}`} alt="preview" style={{ maxWidth: "100px", marginTop: "5px" }} />
-            )}
+            
+            {producto.imagenFile ? (
+              <img
+                src={URL.createObjectURL(producto.imagenFile)}
+                alt="preview"
+                style={{ maxWidth: "100px", marginTop: "5px", borderRadius: "6px" }}
+              />
+            ) : productoEditado?.foto ? (
+              <img
+                src={`http://localhost:9000/uploads/${productoEditado.foto}`}
+                alt="preview"
+                style={{ maxWidth: "100px", marginTop: "5px", borderRadius: "6px" }}
+              />
+            ) : null}
           </Form.Group>
         </Form>
       </Modal.Body>

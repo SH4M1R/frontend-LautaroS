@@ -1,13 +1,17 @@
 import React from "react";
 
 export default function CardProducto({ producto, onEdit, onDelete, onToggleEstado }) {
+  const imagenURL = producto.foto
+    ? `http://localhost:9000/uploads/${producto.foto}`
+    : "https://via.placeholder.com/150";
+
   return (
-    <div className="card h-100">
+    <div className="card h-100 shadow-sm border-0">
       <img
-        src={producto.imagen || "https://via.placeholder.com/150"}
+        src={imagenURL}
         className="card-img-top"
         alt={producto.producto}
-        style={{ maxHeight: "150px", objectFit: "contain" }}
+        style={{ maxHeight: "150px", objectFit: "contain", backgroundColor: "#f8f9fa" }}
       />
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">{producto.producto}</h5>

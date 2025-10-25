@@ -33,7 +33,7 @@ export default function Sidebar() {
         <div className="text-center py-3 bg-secondary bg-opacity-25">
           <UserIcon style={{ width: "28px", color: "red", marginRight: "6px" }} />
           <span className="fw-semibold text-white">
-            {usuario.nombre} ({usuario.rol})
+            {usuario.user} ({usuario.rol})
           </span>
         </div>
       )}
@@ -64,8 +64,8 @@ export default function Sidebar() {
           </button>
           <Collapsible open={openAdmin}>
             <div className="ps-4 mt-2">
-              <Link to="/usuarios" className="d-block text-light text-decoration-none mb-2">
-                <UserIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de Usuarios
+              <Link to="/empleados" className="d-block text-light text-decoration-none mb-2">
+                <UserIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de empleados
               </Link>
               <Link to="/menu" className="d-block text-light text-decoration-none mb-2">
                 <ClipboardDocumentListIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de Menú
