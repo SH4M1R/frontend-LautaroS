@@ -1,1 +1,0 @@
-export const S = (n = 0) => `S/ ${Number(n).toFixed(2)}`;

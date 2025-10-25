@@ -1,73 +1,126 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../ventas/ventas.css";
-import SalesStats from "../ventas/components/SalesStats";
-import SalesFilters from "../ventas/components/SalesFilters";
-import SalesForm from "../ventas/components/SalesForm";
-import SalesTable from "../ventas/components/SalesTable";
-import { readAll, upsert, removeById } from "../ventas/store/storage";
-import { seedVentas } from "../ventas/seed";
+import React, { useEffect, useState } from "react";
+import MetodoPago from "../components/MetodoPago";
 
 export default function Ventas() {
-  useEffect(()=>{ seedVentas(); setData(readAll()); },[]);
-  const [data, setData] = useState([]);
-  const [editing, setEditing] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [carrito, setCarrito] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [modalPagoOpen, setModalPagoOpen] = useState(false);
 
-  const [q, setQ] = useState("");
-  const [estado, setEstado] = useState("");
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
-  const [ordenar, setOrdenar] = useState("recientes");
+  useEffect(() => { fetchProductos(); }, []);
 
-  const handleSubmit = (venta) => {
-    upsert({ ...venta, fechaISO: new Date().toISOString() });
-    setData(readAll());
-    setEditing(null);
+  const fetchProductos = async () => {
+    try {
+      const res = await fetch("http://localhost:9000/api/productos");
+      const data = await res.json();
+      setProductos(data);
+    } catch (err) { console.error(err); }
   };
-  const handleDelete = (id) => { removeById(id); setData(readAll()); };
 
-  const rows = useMemo(()=>{
-    let list = [...data];
-    if(q){
-      const qc = q.toLowerCase();
-      list = list.filter(v => v.id.toLowerCase().includes(qc) || v.cliente.toLowerCase().includes(qc));
-    }
-    if(estado) list = list.filter(v => v.estado === estado);
-    if(desde) list = list.filter(v => v.fechaISO.slice(0,10) >= desde);
-    if(hasta) list = list.filter(v => v.fechaISO.slice(0,10) <= hasta);
+  const productosFiltrados = productos.filter(
+    (p) =>
+      p.producto.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (p.descripcion && p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+  );
 
-    if(ordenar==="montoDesc") list.sort((a,b)=>b.total-a.total);
-    else if(ordenar==="montoAsc") list.sort((a,b)=>a.total-b.total);
-    else list.sort((a,b)=>new Date(b.fechaISO)-new Date(a.fechaISO));
+  const agregarAlCarrito = (producto) => {
+    if (!producto.estado) return; // no agregar si está agotado
+    const existe = carrito.find((item) => item.idProducto === producto.idProducto);
+    if (existe) {
+      setCarrito(
+        carrito.map((item) =>
+          item.idProducto === producto.idProducto ? { ...item, cantidad: item.cantidad + 1 } : item
+        )
+      );
+    } else setCarrito([...carrito, { ...producto, cantidad: 1 }]);
+  };
 
-    return list;
-  },[data,q,estado,desde,hasta,ordenar]);
+  const modificarCantidad = (idProducto, incremento) => {
+    setCarrito(
+      carrito.map((item) =>
+        item.idProducto === idProducto ? { ...item, cantidad: Math.max(item.cantidad + incremento, 1) } : item
+      )
+    );
+  };
 
-  const total = useMemo(()=>rows.reduce((s,v)=>s+v.total,0),[rows]);
-  const pedidos = useMemo(()=>rows.filter(v=>v.estado!=="Cancelado").length,[rows]);
-  const tickets = rows.length;
-  const clientes = useMemo(()=>new Set(rows.map(v=>v.cliente)).size,[rows]);
+  const eliminarProductoCarrito = (idProducto) => setCarrito(carrito.filter((item) => item.idProducto !== idProducto));
+
+  const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
 
   return (
-    <div className="page">
-      <div className="header">
-        <h1 className="title">Ventas</h1>
-        <button className="btn primary" onClick={()=>setEditing({})}>Nueva venta</button>
+    <div className="container-fluid h-100 mt-3">
+      <div className="row h-100">
+        <div className="col-md-8" style={{ height: "100%" }}>
+          <div className="d-flex align-items-center mb-3">
+            <i className="bi bi-basket fs-3 text-primary me-2"></i>
+            <h2 className="mb-0">Ventas</h2>
+          </div>
+          <div className="input-group mb-3">
+            <span className="input-group-text"><i className="bi bi-search"></i></span>
+            <input type="text" className="form-control" placeholder="Buscar producto..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+          </div>
+
+          <div className="row g-3 overflow-auto" style={{ maxHeight: "calc(100vh - 150px)" }}>
+            {productosFiltrados.length === 0 && <p className="text-muted">No hay productos disponibles.</p>}
+            {productosFiltrados.map((p) => (
+              <div key={p.idProducto} className="col-md-4">
+                <div className="card h-100 shadow-sm">
+                  <div className="card-body d-flex flex-column">
+                    <div className="mb-2 text-center">
+                      <img src={p.imagen || "https://via.placeholder.com/120"} alt={p.producto} className="img-fluid" style={{ maxHeight: "120px", objectFit: "contain" }} />
+                    </div>
+                    <h5 className="card-title text-center">{p.producto}</h5>
+                    <p className="text-center text-primary fw-bold">S/ {p.precioVenta}</p>
+                    <button className="btn btn-primary mt-auto" disabled={!p.estado} onClick={() => agregarAlCarrito(p)}>
+                      <i className="bi bi-bag-plus me-1"></i> Agregar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="col-md-4" style={{ height: "650px" }}>
+          <div className="card flex-fill d-flex flex-column shadow-sm h-100">
+            <div className="card-body d-flex flex-column h-100">
+              <div className="d-flex align-items-center mb-3">
+                <i className="bi bi-cart fs-3 text-primary me-2"></i>
+                <h4 className="mb-0">Carrito</h4>
+              </div>
+              <div className="flex-fill overflow-auto mb-3" style={{ maxHeight: "calc(100vh - 200px)" }}>
+                {carrito.length === 0 ? <p className="text-muted">No hay productos en el carrito.</p> :
+                  <ul className="list-group">
+                    {carrito.map((item) => (
+                      <li key={item.idProducto} className="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
+                        <div>
+                          <strong>{item.producto}</strong>
+                          <div className="d-flex align-items-center gap-1 mt-1">
+                            <button className="btn btn-sm btn-outline-secondary" onClick={() => modificarCantidad(item.idProducto, -1)}> - </button>
+                            <span>{item.cantidad}</span>
+                            <button className="btn btn-sm btn-outline-secondary" onClick={() => modificarCantidad(item.idProducto, 1)}> + </button>
+                            <button className="btn btn-sm btn-danger ms-2" onClick={() => eliminarProductoCarrito(item.idProducto)}>
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <span className="mt-2 mt-md-0">S/ {item.precioVenta * item.cantidad}</span>
+                      </li>
+                    ))}
+                  </ul>}
+              </div>
+              <div className="mt-auto border-top pt-3">
+                <h5>Total: S/ {total}</h5>
+                <button className="btn btn-success w-100 mt-2" onClick={() => setModalPagoOpen(true)}>
+                  <i className="bi bi-credit-card me-1"></i> Finalizar Venta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <SalesStats total={total} pedidos={pedidos} tickets={tickets} clientes={clientes} />
-
-      {editing && (
-        <SalesForm initial={editing.id ? editing : undefined}
-                   onSubmit={handleSubmit}
-                   onCancel={()=>setEditing(null)} />
-      )}
-
-      <SalesFilters q={q} setQ={setQ} estado={estado} setEstado={setEstado}
-                    desde={desde} setDesde={setDesde}
-                    hasta={hasta} setHasta={setHasta}
-                    ordenar={ordenar} setOrdenar={setOrdenar} />
-
-      <SalesTable rows={rows} onEdit={(v)=>setEditing(v)} onDelete={handleDelete} />
+      {modalPagoOpen && <MetodoPago total={total} onClose={() => { setModalPagoOpen(false); window.location.reload(); }} />}
     </div>
   );
 }

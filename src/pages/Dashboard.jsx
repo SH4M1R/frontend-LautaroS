@@ -5,7 +5,6 @@ import DashboardCard from "../components/DashboardCard";
 import OrdersTable from "../components/OrdersTable";
 import DashboardChart from "../components/DashboardChart";
 import Notifications from "../components/Notifications";
-import MenuManager from "../components/MenuManager";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Dashboard() {
@@ -68,13 +67,6 @@ export default function Dashboard() {
         <div className="row mb-4">
           <div className="col-12">
             <OrdersTable pedidos={pedidos} setPedidos={setPedidos} />
-          </div>
-        </div>
-
-        {/* Gestión de Menú */}
-        <div className="row">
-          <div className="col-12">
-            <MenuManager menu={menu} setMenu={setMenu} />
           </div>
         </div>
       </div>
