@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Image } from "react-bootstrap";
 
 export default function ModalProducto({ isOpen, onClose, onSave, categorias, productoEditado }) {
   const [producto, setProducto] = useState({
@@ -8,8 +8,9 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     precioVenta: "",
     estado: true,
     categoria: null,
-    imagen: null,
   });
+
+  const [imagenArchivo, setImagenArchivo] = useState(null);
 
   useEffect(() => {
     if (productoEditado) {
@@ -20,8 +21,9 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         precioVenta: productoEditado.precioVenta || "",
         estado: productoEditado.estado ?? true,
         categoria: productoEditado.categoria || null,
-        imagen: null,
+        imagen: productoEditado.imagen || null,
       });
+      setImagenArchivo(null);
     } else {
       setProducto({
         producto: "",
@@ -31,6 +33,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         categoria: null,
         imagen: null,
       });
+      setImagenArchivo(null);
     }
   }, [productoEditado, isOpen]);
 
@@ -46,15 +49,27 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
   };
 
   const handleImagenChange = (e) => {
-    setProducto((prev) => ({ ...prev, imagen: e.target.files[0] }));
+    if (e.target.files && e.target.files.length > 0) {
+      setImagenArchivo(e.target.files[0]);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!producto.producto || !producto.descripcion || !producto.precioVenta || !producto.categoria) {
       alert("Completa todos los campos obligatorios.");
       return;
     }
-    onSave(producto);
+
+    const formData = new FormData();
+    formData.append("producto", producto.producto);
+    formData.append("descripcion", producto.descripcion);
+    formData.append("precioVenta", producto.precioVenta);
+    formData.append("estado", producto.estado);
+    formData.append("idCategoria", producto.categoria.idCategoria);
+
+    if (imagenArchivo) formData.append("imagen", imagenArchivo);
+
+    await onSave(producto.idProducto, formData, !!imagenArchivo);
   };
 
   return (
@@ -90,8 +105,22 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Imagen del Producto</Form.Label>
-            <Form.Control type="file" accept="image/*" onChange={handleImagenChange} />
+            <Form.Label>Imagen</Form.Label>
+            {producto.imagen && !imagenArchivo && (
+              <div className="mb-2">
+                <Image src={`http://localhost:9000/upload/${producto.imagen}`} fluid thumbnail style={{ maxHeight: "150px" }} />
+              </div>
+            )}
+            <Form.Control type="file" onChange={handleImagenChange} accept="image/*" />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Check 
+              type="checkbox" 
+              label="Disponible" 
+              checked={producto.estado} 
+              onChange={(e) => setProducto((prev) => ({ ...prev, estado: e.target.checked }))}
+            />
           </Form.Group>
         </Form>
       </Modal.Body>

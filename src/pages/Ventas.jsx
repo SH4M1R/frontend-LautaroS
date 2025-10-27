@@ -6,15 +6,23 @@ export default function Ventas() {
   const [carrito, setCarrito] = useState([]);
   const [productos, setProductos] = useState([]);
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
+  const [cliente, setCliente] = useState("");
+  const [fechaActual, setFechaActual] = useState(new Date());
 
-  useEffect(() => { fetchProductos(); }, []);
+  useEffect(() => {
+    fetchProductos();
+    const intervalo = setInterval(() => setFechaActual(new Date()), 1000);
+    return () => clearInterval(intervalo);
+  }, []);
 
   const fetchProductos = async () => {
     try {
       const res = await fetch("http://localhost:9000/api/productos");
       const data = await res.json();
-      setProductos(data);
-    } catch (err) { console.error(err); }
+      setProductos(data.filter((p) => p.estado));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const productosFiltrados = productos.filter(
@@ -24,7 +32,7 @@ export default function Ventas() {
   );
 
   const agregarAlCarrito = (producto) => {
-    if (!producto.estado) return; // no agregar si está agotado
+    if (!producto.estado) return;
     const existe = carrito.find((item) => item.idProducto === producto.idProducto);
     if (existe) {
       setCarrito(
@@ -47,31 +55,76 @@ export default function Ventas() {
 
   const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
 
+  const fechaFormateada = fechaActual.toLocaleString();
+
   return (
-    <div className="container-fluid h-100 mt-3">
+    <div className="container-fluid mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex align-items-center gap-3">
+          <i className="bi bi-basket fs-3 text-primary"></i>
+          <h2 className="mb-0">Ventas</h2>
+        </div>
+        <div className="text-end">
+          <small className="text-muted">{fechaFormateada}</small>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control form-control-lg"
+          placeholder="Nombre del cliente..."
+          value={cliente}
+          onChange={(e) => setCliente(e.target.value)}
+        />
+      </div>
+
       <div className="row h-100">
-        <div className="col-md-8" style={{ height: "100%" }}>
-          <div className="d-flex align-items-center mb-3">
-            <i className="bi bi-basket fs-3 text-primary me-2"></i>
-            <h2 className="mb-0">Ventas</h2>
-          </div>
+        {/* Productos */}
+        <div
+          className="col-md-8 mb-3"
+          style={{ maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}
+        >
           <div className="input-group mb-3">
-            <span className="input-group-text"><i className="bi bi-search"></i></span>
-            <input type="text" className="form-control" placeholder="Buscar producto..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            <span className="input-group-text">
+              <i className="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar producto..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
           </div>
 
-          <div className="row g-3 overflow-auto" style={{ maxHeight: "calc(100vh - 150px)" }}>
+          <div className="row g-3">
             {productosFiltrados.length === 0 && <p className="text-muted">No hay productos disponibles.</p>}
             {productosFiltrados.map((p) => (
-              <div key={p.idProducto} className="col-md-4">
-                <div className="card h-100 shadow-sm">
+              <div key={p.idProducto} className="col-sm-6 col-md-4 col-lg-3">
+                <div
+                  className="card h-100 shadow-sm border-0"
+                  style={{ cursor: p.estado ? "pointer" : "not-allowed", transition: "transform 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <img
+                    src={p.imagen ? `http://localhost:9000/upload/${p.imagen}` : "https://via.placeholder.com/150"}
+                    alt={p.producto}
+                    className="card-img-top"
+                    style={{ height: "150px", objectFit: "cover" }}
+                  />
                   <div className="card-body d-flex flex-column">
-                    <div className="mb-2 text-center">
-                      <img src={p.imagen || "https://via.placeholder.com/120"} alt={p.producto} className="img-fluid" style={{ maxHeight: "120px", objectFit: "contain" }} />
-                    </div>
-                    <h5 className="card-title text-center">{p.producto}</h5>
-                    <p className="text-center text-primary fw-bold">S/ {p.precioVenta}</p>
-                    <button className="btn btn-primary mt-auto" disabled={!p.estado} onClick={() => agregarAlCarrito(p)}>
+                    <h6 className="card-title text-center mb-1">{p.producto}</h6>
+                    <p className="text-center text-muted small mb-2">
+                      {p.descripcion || "Sin descripción"}
+                    </p>
+                    <p className="text-center text-primary fw-bold mb-2">S/ {p.precioVenta}</p>
+                    <button
+                      className={`btn btn-${p.estado ? "primary" : "secondary"} btn-sm mt-auto`}
+                      disabled={!p.estado}
+                      onClick={() => agregarAlCarrito(p)}
+                    >
                       <i className="bi bi-bag-plus me-1"></i> Agregar
                     </button>
                   </div>
@@ -81,25 +134,42 @@ export default function Ventas() {
           </div>
         </div>
 
-        <div className="col-md-4" style={{ height: "650px" }}>
-          <div className="card flex-fill d-flex flex-column shadow-sm h-100">
+        {/* Carrito */}
+        <div className="col-md-4" style={{ height: "500px", overflowY: "auto" }}>
+          <div className="card shadow-sm h-100">
             <div className="card-body d-flex flex-column h-100">
-              <div className="d-flex align-items-center mb-3">
-                <i className="bi bi-cart fs-3 text-primary me-2"></i>
-                <h4 className="mb-0">Carrito</h4>
-              </div>
-              <div className="flex-fill overflow-auto mb-3" style={{ maxHeight: "calc(100vh - 200px)" }}>
-                {carrito.length === 0 ? <p className="text-muted">No hay productos en el carrito.</p> :
+              <h5 className="mb-3"><i className="bi bi-cart me-2"></i>Carrito</h5>
+
+              <div className="flex-fill overflow-auto mb-3">
+                {carrito.length === 0 ? (
+                  <p className="text-muted">No hay productos en el carrito.</p>
+                ) : (
                   <ul className="list-group">
                     {carrito.map((item) => (
-                      <li key={item.idProducto} className="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
+                      <li
+                        key={item.idProducto}
+                        className="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row"
+                      >
                         <div>
                           <strong>{item.producto}</strong>
                           <div className="d-flex align-items-center gap-1 mt-1">
-                            <button className="btn btn-sm btn-outline-secondary" onClick={() => modificarCantidad(item.idProducto, -1)}> - </button>
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => modificarCantidad(item.idProducto, -1)}
+                            >
+                              -
+                            </button>
                             <span>{item.cantidad}</span>
-                            <button className="btn btn-sm btn-outline-secondary" onClick={() => modificarCantidad(item.idProducto, 1)}> + </button>
-                            <button className="btn btn-sm btn-danger ms-2" onClick={() => eliminarProductoCarrito(item.idProducto)}>
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => modificarCantidad(item.idProducto, 1)}
+                            >
+                              +
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger ms-2"
+                              onClick={() => eliminarProductoCarrito(item.idProducto)}
+                            >
                               <i className="bi bi-trash"></i>
                             </button>
                           </div>
@@ -107,11 +177,16 @@ export default function Ventas() {
                         <span className="mt-2 mt-md-0">S/ {item.precioVenta * item.cantidad}</span>
                       </li>
                     ))}
-                  </ul>}
+                  </ul>
+                )}
               </div>
+
               <div className="mt-auto border-top pt-3">
                 <h5>Total: S/ {total}</h5>
-                <button className="btn btn-success w-100 mt-2" onClick={() => setModalPagoOpen(true)}>
+                <button
+                  className="btn btn-success w-100 mt-2"
+                  onClick={() => setModalPagoOpen(true)}
+                >
                   <i className="bi bi-credit-card me-1"></i> Finalizar Venta
                 </button>
               </div>
@@ -120,7 +195,16 @@ export default function Ventas() {
         </div>
       </div>
 
-      {modalPagoOpen && <MetodoPago total={total} onClose={() => { setModalPagoOpen(false); window.location.reload(); }} />}
+      {modalPagoOpen && (
+        <MetodoPago
+          total={total}
+          cliente={cliente}
+          onClose={() => {
+            setModalPagoOpen(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

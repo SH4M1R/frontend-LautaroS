@@ -43,30 +43,16 @@ export default function Menu() {
     }
   };
 
-  const handleSaveProducto = async (producto) => {
+  const handleSaveProducto = async (formData, idProducto) => {
     try {
-      const formData = new FormData();
-      formData.append("producto", producto.producto);
-      formData.append("descripcion", producto.descripcion);
-      formData.append("precioVenta", producto.precioVenta);
-      formData.append("estado", producto.estado);
-      formData.append("idCategoria", producto.categoria?.idCategoria || "");
-      if (producto.imagen) formData.append("imagen", producto.imagen);
+      const url = idProducto
+        ? `http://localhost:9000/api/productos/${idProducto}`
+        : `http://localhost:9000/api/productos/con-imagen`;
 
-      let res;
-      if (producto.idProducto) {
-        res = await fetch(`http://localhost:9000/api/productos/actualizar-imagen/${producto.idProducto}`, {
-          method: "PUT",
-          body: formData,
-        });
-      } else {
-        res = await fetch("http://localhost:9000/api/productos/con-imagen", {
-          method: "POST",
-          body: formData,
-        });
-      }
+      const method = idProducto ? "PUT" : "POST";
 
-      await res.json();
+      await fetch(url, { method, body: formData });
+
       fetchProductos();
       setProductoModalOpen(false);
       setProductoEdit(null);
@@ -83,15 +69,27 @@ export default function Menu() {
 
   const handleToggleEstado = async (prod) => {
     try {
+      const formData = new FormData();
+      formData.append("producto", prod.producto);
+      formData.append("descripcion", prod.descripcion || "");
+      formData.append("precioVenta", prod.precioVenta);
+      formData.append("estado", !prod.estado); 
+      formData.append("idCategoria", prod.categoria?.idCategoria);
+      if (prod.imagenFile) formData.append("imagen", prod.imagenFile);
+
       await fetch(`http://localhost:9000/api/productos/${prod.idProducto}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...prod, estado: !prod.estado }),
+        body: formData,
       });
+
       fetchProductos();
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleSaveCategoria = (cat) => {
+    setCategorias((prev) => [...prev, cat]);
   };
 
   const productosFiltrados = productos.filter(
@@ -170,7 +168,7 @@ export default function Menu() {
       <ModalCategoria
         isOpen={isCategoriaModalOpen}
         onClose={() => setCategoriaModalOpen(false)}
-        onSave={(cat) => setCategorias((prev) => [...prev, cat])}
+        onSave={handleSaveCategoria}
       />
     </div>
   );

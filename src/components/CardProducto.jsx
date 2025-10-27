@@ -3,14 +3,22 @@ import React from "react";
 export default function CardProducto({ producto, onEdit, onDelete, onToggleEstado }) {
   return (
     <div className="card h-100">
-      {producto.imagen && (
+      {producto.imagenPreview ? (
+        <img
+          src={producto.imagenPreview}
+          className="card-img-top"
+          alt={producto.producto}
+          style={{ height: "180px", objectFit: "cover" }}
+        />
+      ) : producto.imagen ? (
         <img
           src={`http://localhost:9000/upload/${producto.imagen}`}
           className="card-img-top"
           alt={producto.producto}
           style={{ height: "180px", objectFit: "cover" }}
         />
-      )}
+      ) : null}
+
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">{producto.producto}</h5>
         <p className="card-text">{producto.descripcion || "Sin descripción"}</p>
