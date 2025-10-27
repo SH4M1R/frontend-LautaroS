@@ -3,75 +3,112 @@ import { Table, Button } from "react-bootstrap";
 import ModalEmpleado from "../components/ModalEmpleado";
 
 export default function Empleados() {
-  const [empleados, setEmpleados] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+    const [empleados, setEmpleados] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [empleadoToEdit, setEmpleadoToEdit] = useState(null); // Para editar
 
-  useEffect(() => {
-    fetchEmpleados();
-  }, []);
+    useEffect(() => {
+        fetchEmpleados();
+    }, []);
 
-  const fetchEmpleados = async () => {
-    try {
-      const res = await fetch("http://localhost:9000/api/empleados");
-      if (!res.ok) throw new Error("Error al cargar empleados");
-      const data = await res.json();
-      setEmpleados(data);
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
+    const fetchEmpleados = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("http://localhost:9000/api/empleados");
+            const data = await res.json();
+            setEmpleados(data);
+        } catch (error) {
+            console.error("Error al obtener la lista de empleados:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleOpenModal = (empleado = null) => {
+        setEmpleadoToEdit(empleado);
+        setShowModal(true);
+    };
 
-  const guardarEmpleado = async (empleado) => {
-    try {
-      const res = await fetch("http://localhost:9000/api/empleados", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(empleado),
-      });
-      if (!res.ok) throw new Error("Error al guardar el empleado");
+    const handleSaveSuccess = () => {
+        setShowModal(false);
+        setEmpleadoToEdit(null);
+        fetchEmpleados(); 
+    };
 
-      const nuevoEmpleado = await res.json();
-      setEmpleados([...empleados, nuevoEmpleado]);
-      setModalOpen(false);
-    } catch (error) {
-      console.error("Error al guardar el empleado:", error);
-      alert("Error al guardar el empleado");
-    }
-  };
+    const handleDelete = async (idEmpleado) => {
+        if (!window.confirm(`¿Seguro de eliminar al empleado con ID ${idEmpleado}?`)) return;
 
-  return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Empleados</h3>
-        <Button onClick={() => setModalOpen(true)}>+ Agregar Empleado</Button>
-      </div>
+        try {
+            const res = await fetch(`http://localhost:9000/api/empleados/${idEmpleado}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error("Error al eliminar");
+            setEmpleados(empleados.filter(emp => emp.idEmpleado !== idEmpleado));
+        } catch (error) {
+            console.error("Error al eliminar el empleado:", error);
+            alert("Fallo al eliminar el empleado.");
+        }
+    };
 
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Username</th>
-            <th>Rol</th>
-          </tr>
-        </thead>
-        <tbody>
-          {empleados.map((emp) => (
-            <tr key={emp.idEmpleado}>
-              <td>{emp.idEmpleado}</td>
-              <td>{emp.user}</td>
-              <td>{emp.username}</td>
-              <td>{emp.rol?.rol}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+    return (
+        <div className="container mt-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3>Gestión de Empleados</h3>
+                <Button variant="primary" onClick={() => handleOpenModal()}>
+                    <i className="bi bi-person-plus-fill me-2"></i>Agregar Empleado
+                </Button>
+            </div>
 
-      <ModalEmpleado
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={guardarEmpleado}
-      />
-    </div>
-  );
+            {loading ? (<p>Cargando empleados...</p>) : (
+                <Table striped bordered hover responsive>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Username</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {empleados.map((emp) => (
+                            <tr key={emp.idEmpleado}>
+                                <td>{emp.idEmpleado}</td>
+                                <td>{emp.user}</td>
+                                <td>{emp.username}</td>
+                                <td>{emp.rol?.rol}</td>
+                                <td>
+                                    {/* Botón Editar con Icono */}
+                                    <Button 
+                                        variant="warning" 
+                                        size="sm" 
+                                        className="me-2" 
+                                        onClick={() => handleOpenModal(emp)}
+                                    >
+                                        <i className="bi bi-pencil-square"></i>
+                                    </Button>
+                                    {/* Botón Eliminar con Icono */}
+                                    <Button 
+                                        variant="danger" 
+                                        size="sm" 
+                                        onClick={() => handleDelete(emp.idEmpleado)}
+                                    >
+                                        <i className="bi bi-trash-fill"></i>
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            )}
+
+            <ModalEmpleado
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                onSave={handleSaveSuccess}
+                empleadoData={empleadoToEdit}
+            />
+        </div>
+    );
 }

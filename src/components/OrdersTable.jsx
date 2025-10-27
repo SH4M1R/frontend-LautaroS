@@ -1,4 +1,3 @@
-// src/components/OrdersTable.jsx
 import React from "react";
 
 const OrdersTable = ({ pedidos, setPedidos }) => {

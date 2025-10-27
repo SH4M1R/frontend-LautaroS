@@ -8,7 +8,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     precioVenta: "",
     estado: true,
     categoria: null,
-    imagenFile: null,
+    imagen: null,
   });
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         precioVenta: productoEditado.precioVenta || "",
         estado: productoEditado.estado ?? true,
         categoria: productoEditado.categoria || null,
-        imagenFile: null,
+        imagen: null,
       });
     } else {
       setProducto({
@@ -29,7 +29,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         precioVenta: "",
         estado: true,
         categoria: null,
-        imagenFile: null,
+        imagen: null,
       });
     }
   }, [productoEditado, isOpen]);
@@ -45,25 +45,16 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
     setProducto((prev) => ({ ...prev, categoria: categoriaSeleccionada }));
   };
 
-  const handleFileChange = (e) => {
-    setProducto((prev) => ({ ...prev, imagenFile: e.target.files[0] }));
+  const handleImagenChange = (e) => {
+    setProducto((prev) => ({ ...prev, imagen: e.target.files[0] }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!producto.producto || !producto.descripcion || !producto.precioVenta || !producto.categoria) {
       alert("Completa todos los campos obligatorios.");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("producto", producto.producto);
-    formData.append("descripcion", producto.descripcion);
-    formData.append("precioVenta", producto.precioVenta);
-    formData.append("estado", producto.estado);
-    formData.append("categoriaId", producto.categoria.idCategoria);
-    if (producto.imagenFile) formData.append("imagen", producto.imagenFile);
-
-    await onSave(formData, producto.idProducto);
+    onSave(producto);
   };
 
   return (
@@ -75,67 +66,32 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
         <Form>
           <Form.Group className="mb-3">
             <Form.Label>Nombre del Producto</Form.Label>
-            <Form.Control
-              type="text"
-              name="producto"
-              value={producto.producto}
-              onChange={handleChange}
-            />
+            <Form.Control type="text" name="producto" value={producto.producto} onChange={handleChange} />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              name="descripcion"
-              value={producto.descripcion}
-              onChange={handleChange}
-            />
+            <Form.Control as="textarea" rows={2} name="descripcion" value={producto.descripcion} onChange={handleChange} />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Precio de Venta (S/)</Form.Label>
-            <Form.Control
-              type="number"
-              name="precioVenta"
-              value={producto.precioVenta}
-              onChange={handleChange}
-            />
+            <Form.Control type="number" name="precioVenta" value={producto.precioVenta} onChange={handleChange} />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Categoría</Form.Label>
-            <Form.Select
-              value={producto.categoria?.idCategoria || ""}
-              onChange={handleCategoriaChange}
-            >
+            <Form.Select value={producto.categoria?.idCategoria || ""} onChange={handleCategoriaChange}>
               <option value="">Selecciona una categoría</option>
               {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.idCategoria}>
-                  {cat.nombreCategoria}
-                </option>
+                <option key={cat.idCategoria} value={cat.idCategoria}>{cat.nombreCategoria}</option>
               ))}
             </Form.Select>
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Imagen</Form.Label>
-            <Form.Control type="file" accept="image/*" onChange={handleFileChange} />
-            
-            {producto.imagenFile ? (
-              <img
-                src={URL.createObjectURL(producto.imagenFile)}
-                alt="preview"
-                style={{ maxWidth: "100px", marginTop: "5px", borderRadius: "6px" }}
-              />
-            ) : productoEditado?.foto ? (
-              <img
-                src={`http://localhost:9000/uploads/${productoEditado.foto}`}
-                alt="preview"
-                style={{ maxWidth: "100px", marginTop: "5px", borderRadius: "6px" }}
-              />
-            ) : null}
+            <Form.Label>Imagen del Producto</Form.Label>
+            <Form.Control type="file" accept="image/*" onChange={handleImagenChange} />
           </Form.Group>
         </Form>
       </Modal.Body>

@@ -1,4 +1,3 @@
-// src/components/Notifications.jsx
 import React from "react";
 
 const Notifications = () => {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { UserIcon, PowerIcon, ChartBarIcon, CurrencyDollarIcon, ShoppingCartIcon, CalendarDaysIcon, UserGroupIcon, ClipboardDocumentListIcon, GiftIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { UserIcon, PowerIcon, ChartBarIcon, CurrencyDollarIcon, ShoppingCartIcon, UserGroupIcon, ClipboardDocumentListIcon, GiftIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 
 function Collapsible({ open, children }) {
   const ref = useRef(null);
@@ -50,9 +50,6 @@ export default function Sidebar() {
         <Link to="/ventas" className="d-flex align-items-center text-decoration-none text-light mb-3">
           <ShoppingCartIcon style={{ width: "24px", marginRight: "10px", color: "red" }} /> Ventas
         </Link>
-        <Link to="/reservas" className="d-flex align-items-center text-decoration-none text-light mb-3">
-          <CalendarDaysIcon style={{ width: "24px", marginRight: "10px", color: "red" }} /> Reservas
-        </Link>
 
         {/* Administración */}
         <div className="mt-4">
@@ -65,13 +62,10 @@ export default function Sidebar() {
           <Collapsible open={openAdmin}>
             <div className="ps-4 mt-2">
               <Link to="/empleados" className="d-block text-light text-decoration-none mb-2">
-                <UserIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de empleados
+                <UserIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de Empleados
               </Link>
               <Link to="/menu" className="d-block text-light text-decoration-none mb-2">
                 <ClipboardDocumentListIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Gestión de Menú
-              </Link>
-              <Link to="/promociones" className="d-block text-light text-decoration-none mb-2">
-                <GiftIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Promociones
               </Link>
             </div>
           </Collapsible>
