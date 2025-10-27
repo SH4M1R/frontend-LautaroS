@@ -29,7 +29,6 @@ export default function Login() {
 
       const data = await response.json();
 
-      // Guarda al usuario autenticado (sin contraseña)
       login({
         idEmpleado: data.idEmpleado,
         username: data.username,
@@ -37,7 +36,6 @@ export default function Login() {
         rol: data.rol?.rol,
       });
 
-      // Redirige siempre al dashboard
       navigate("/dashboard");
 
     } catch (err) {
@@ -78,6 +76,8 @@ export default function Login() {
               </button>
             </div>
           </div>
+          <p className="text-muted mb-0">DATOS DE LA BD PARA INICIAR SESION:</p>
+          <p className="text-muted mb-0">usuario: admin // contraseña: admin123</p>
 
           <div className="d-grid mt-4">
             <button type="submit" className="btn btn-danger fw-semibold">
