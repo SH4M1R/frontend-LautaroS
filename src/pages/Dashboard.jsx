@@ -1,10 +1,7 @@
-// src/pages/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import DashboardCard from "../components/DashboardCard";
-import OrdersTable from "../components/OrdersTable";
 import DashboardChart from "../components/DashboardChart";
-import Notifications from "../components/Notifications";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Dashboard() {
@@ -18,7 +15,6 @@ export default function Dashboard() {
   const [pedidos, setPedidos] = useState([]);
   const [menu, setMenu] = useState([]);
 
-  // Cargar datos desde LocalStorage (solo si existen)
   useEffect(() => {
     const storedMetrics = JSON.parse(localStorage.getItem("metrics"));
     const storedPedidos = JSON.parse(localStorage.getItem("pedidos"));
@@ -31,7 +27,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Guardar datos en LocalStorage (cada vez que algo cambie)
   useEffect(() => {
     localStorage.setItem("metrics", JSON.stringify(metrics));
     localStorage.setItem("pedidos", JSON.stringify(pedidos));
@@ -57,16 +52,6 @@ export default function Dashboard() {
         <div className="row mb-4">
           <div className="col-md-8">
             <DashboardChart />
-          </div>
-          <div className="col-md-4">
-            <Notifications />
-          </div>
-        </div>
-
-        {/* Tabla de pedidos */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <OrdersTable pedidos={pedidos} setPedidos={setPedidos} />
           </div>
         </div>
       </div>

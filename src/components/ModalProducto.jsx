@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Image } from "react-bootstrap";
 
-export default function ModalProducto({ isOpen, onClose, onSave, categorias, productoEditado }) {
+export default function ModalProducto({ isOpen, onClose, onSave, categorias = [], productoEditado }) {
   const [producto, setProducto] = useState({
     producto: "",
     descripcion: "",
     precioVenta: "",
     estado: true,
     categoria: null,
+    imagen: null,
   });
-
   const [imagenArchivo, setImagenArchivo] = useState(null);
 
   useEffect(() => {
@@ -39,13 +39,13 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProducto((prev) => ({ ...prev, [name]: value }));
+    setProducto(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCategoriaChange = (e) => {
     const idCategoria = parseInt(e.target.value);
-    const categoriaSeleccionada = categorias.find((cat) => cat.idCategoria === idCategoria);
-    setProducto((prev) => ({ ...prev, categoria: categoriaSeleccionada }));
+    const cat = categorias.find(c => c.idCategoria === idCategoria);
+    setProducto(prev => ({ ...prev, categoria: cat || null }));
   };
 
   const handleImagenChange = (e) => {
@@ -60,16 +60,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
       return;
     }
 
-    const formData = new FormData();
-    formData.append("producto", producto.producto);
-    formData.append("descripcion", producto.descripcion);
-    formData.append("precioVenta", producto.precioVenta);
-    formData.append("estado", producto.estado);
-    formData.append("idCategoria", producto.categoria.idCategoria);
-
-    if (imagenArchivo) formData.append("imagen", imagenArchivo);
-
-    await onSave(producto.idProducto, formData, !!imagenArchivo);
+    await onSave(producto, imagenArchivo);
   };
 
   return (
@@ -77,6 +68,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
       <Modal.Header closeButton>
         <Modal.Title>{productoEditado ? "Editar Producto" : "Nuevo Producto"}</Modal.Title>
       </Modal.Header>
+
       <Modal.Body>
         <Form>
           <Form.Group className="mb-3">
@@ -91,15 +83,15 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
 
           <Form.Group className="mb-3">
             <Form.Label>Precio de Venta (S/)</Form.Label>
-            <Form.Control type="number" name="precioVenta" value={producto.precioVenta} onChange={handleChange} />
+            <Form.Control type="number" name="precioVenta" value={producto.precioVenta} onChange={handleChange} step="0.01" min="0" />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Categoría</Form.Label>
             <Form.Select value={producto.categoria?.idCategoria || ""} onChange={handleCategoriaChange}>
               <option value="">Selecciona una categoría</option>
-              {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.idCategoria}>{cat.nombreCategoria}</option>
+              {categorias.map(c => (
+                <option key={c.idCategoria} value={c.idCategoria}>{c.nombreCategoria}</option>
               ))}
             </Form.Select>
           </Form.Group>
@@ -108,22 +100,23 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias, pro
             <Form.Label>Imagen</Form.Label>
             {producto.imagen && !imagenArchivo && (
               <div className="mb-2">
-                <Image src={`http://localhost:9000/upload/${producto.imagen}`} fluid thumbnail style={{ maxHeight: "150px" }} />
+                <Image src={`http://localhost:9000${producto.imagen}`} fluid thumbnail style={{ maxHeight: "150px" }} />
               </div>
             )}
             <Form.Control type="file" onChange={handleImagenChange} accept="image/*" />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Check 
-              type="checkbox" 
-              label="Disponible" 
-              checked={producto.estado} 
-              onChange={(e) => setProducto((prev) => ({ ...prev, estado: e.target.checked }))}
+            <Form.Check
+              type="checkbox"
+              label="Disponible"
+              checked={producto.estado}
+              onChange={e => setProducto(prev => ({ ...prev, estado: e.target.checked }))}
             />
           </Form.Group>
         </Form>
       </Modal.Body>
+
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>Cerrar</Button>
         <Button variant="primary" onClick={handleSubmit}>Guardar</Button>

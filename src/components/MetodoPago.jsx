@@ -1,119 +1,100 @@
-import React, { useState } from "react";
-import { Modal, Button, Form, Card } from "react-bootstrap";
-import qrYape from '../assets/qr-yape.jpg';
+import React, { useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-export default function MetodoPago({ total, onClose }) {
-  const [metodo, setMetodo] = useState("");
-  const [efectivo, setEfectivo] = useState("");
-  const [tarjeta, setTarjeta] = useState("");
-  const [boleta, setBoleta] = useState("");
-
-  const vuelto = efectivo ? Number(efectivo) - total : 0;
-
-  const procesarPago = () => {
-    if (!metodo) { alert("Selecciona un método de pago."); return; }
-    if (metodo === "efectivo" && (!efectivo || Number(efectivo) < total)) {
-      alert("Monto recibido insuficiente."); return;
+export default function MetodoPago({
+  metodoPago,
+  setMetodoPago,
+  montoPagado,
+  setMontoPagado,
+  vuelto,
+  setVuelto,
+  total,
+  ultimos4,
+  setUltimos4,
+  codigoIzipay,
+  setCodigoIzipay,
+}) {
+  useEffect(() => {
+    if (metodoPago === "EFECTIVO") {
+      const calc = parseFloat(montoPagado) - parseFloat(total);
+      setVuelto(calc > 0 ? calc : 0);
+    } else {
+      setVuelto(0);
     }
-    if (metodo === "tarjeta" && (tarjeta.length !== 4 || !boleta)) {
-      alert("Completa los datos de tarjeta y boleta."); return;
-    }
-
-    alert("Pago procesado correctamente");
-    onClose();
-    setTimeout(() => window.location.reload(), 100);
-  };
+  }, [montoPagado, metodoPago, total, setVuelto]);
 
   return (
-    <Modal show={true} onHide={onClose} centered size="md">
-      <Modal.Header closeButton className="bg-primary text-white">
-        <Modal.Title>Método de Pago</Modal.Title>
-      </Modal.Header>
-      <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-        <Card className="mb-3 shadow-sm border-0">
-          <Card.Body>
-            <h5 className="text-center">Total a pagar</h5>
-            <p className="text-center fs-4 fw-bold text-primary">S/ {total.toFixed(2)}</p>
-          </Card.Body>
-        </Card>
+    <div className="card shadow-sm mt-3 p-3 border-danger" style={{ borderWidth: 2 }}>
+      <h5 className="text-danger fw-bold">Método de Pago</h5>
 
-        {!metodo && (
-          <div className="d-grid gap-2">
-            <Button variant="outline-primary" onClick={() => setMetodo("efectivo")}>
-              Efectivo
-            </Button>
-            <Button variant="outline-secondary" onClick={() => setMetodo("yape")}>
-              Yape
-            </Button>
-            <Button variant="outline-info" onClick={() => setMetodo("tarjeta")}>
-              Tarjeta/Izipay
-            </Button>
+      <div className="btn-group w-100 mb-3">
+        <button
+          className={`btn ${metodoPago === "EFECTIVO" ? "btn-danger" : "btn-outline-danger"}`}
+          onClick={() => setMetodoPago("EFECTIVO")}
+        >
+          Efectivo
+        </button>
+        <button
+          className={`btn ${metodoPago === "YAPE" ? "btn-danger" : "btn-outline-danger"}`}
+          onClick={() => setMetodoPago("YAPE")}
+        >
+          Yape
+        </button>
+        <button
+          className={`btn ${metodoPago === "IZIPAY" ? "btn-danger" : "btn-outline-danger"}`}
+          onClick={() => setMetodoPago("IZIPAY")}
+        >
+          Izipay
+        </button>
+      </div>
+
+      {metodoPago === "EFECTIVO" && (
+        <div>
+          <label className="form-label fw-bold">Monto Pagado</label>
+          <input
+            type="number"
+            className="form-control"
+            value={montoPagado}
+            onChange={(e) => setMontoPagado(parseFloat(e.target.value) || 0)}
+          />
+          <div className="mt-2">
+            <strong>Vuelto: </strong> S/ {vuelto.toFixed(2)}
           </div>
-        )}
+        </div>
+      )}
 
-        {metodo === "efectivo" && (
-          <Card className="p-3 shadow-sm border-0 mt-3">
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Label>Monto recibido</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={efectivo}
-                  onChange={(e) => setEfectivo(e.target.value)}
-                  placeholder="Ingrese el monto"
-                />
-              </Form.Group>
-              <p className="fw-bold">
-                Vuelto:{" "}
-                <span className={vuelto < 0 ? "text-danger" : "text-success"}>
-                  {vuelto >= 0 ? `S/ ${vuelto.toFixed(2)}` : "Monto insuficiente"}
-                </span>
-              </p>
-            </Form>
-          </Card>
-        )}
+      {metodoPago === "YAPE" && (
+        <div className="text-center">
+          <p className="fw-bold m-1">Escanea el QR</p>
+          <img
+            src="/src/assets/qr-yape.jpg"
+            alt="QR Yape"
+            style={{ width: "70%", borderRadius: 10 }}
+          />
+        </div>
+      )}
 
-        {metodo === "yape" && (
-          <Card className="p-3 shadow-sm border-0 mt-3 text-center">
-            <p className="mb-2 fw-semibold">Escanea este QR para pagar con Yape</p>
-            <img src={qrYape} alt="QR Yape" className="img-fluid border rounded d-block mx-auto" style={{ height: "200px", width:"200px"}}/> </Card>
-        )}
+      {metodoPago === "IZIPAY" && (
+        <div>
+          <label className="form-label fw-bold">Últimos 4 dígitos</label>
+          <input
+            type="text"
+            className="form-control mb-2"
+            maxLength={4}
+            value={ultimos4}
+            onChange={(e) => setUltimos4(e.target.value.replace(/[^0-9]/g, ""))}
+          />
 
-        {metodo === "tarjeta" && (
-          <Card className="p-3 shadow-sm border-0 mt-3">
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Label>Últimos 4 dígitos de la tarjeta</Form.Label>
-                <Form.Control
-                  type="text"
-                  maxLength={4}
-                  value={tarjeta}
-                  onChange={(e) => setTarjeta(e.target.value)}
-                  placeholder="1234"
-                />
-              </Form.Group>
-              <Form.Group>
-                <Form.Label>Número de boleta</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={boleta}
-                  onChange={(e) => setBoleta(e.target.value)}
-                  placeholder="Ingrese nro de boleta"
-                />
-              </Form.Group>
-            </Form>
-          </Card>
-        )}
-      </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="outline-secondary" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button variant="primary" onClick={procesarPago}>
-          Confirmar Pago
-        </Button>
-      </Modal.Footer>
-    </Modal>
+          <label className="form-label fw-bold">Código IZIPAY (6 dígitos)</label>
+          <input
+            type="text"
+            className="form-control"
+            maxLength={6}
+            value={codigoIzipay}
+            onChange={(e) => setCodigoIzipay(e.target.value.replace(/[^0-9]/g, ""))}
+          />
+        </div>
+      )}
+    </div>
   );
 }

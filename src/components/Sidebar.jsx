@@ -70,26 +70,11 @@ export default function Sidebar() {
             </div>
           </Collapsible>
         </div>
-
-        {/* Análisis y Configuración */}
-        <div className="mt-3">
-          <button onClick={() => setOpenAnalisis(!openAnalisis)} className="btn btn-sm w-100 text-start text-light d-flex justify-content-between align-items-center px-0" style={{ background: "none", border: "none" }}>
-            <div className="d-flex align-items-center">
-              <ChartBarIcon style={{ width: "24px", marginRight: "10px", color: "red" }} /> Análisis & Configuración
-            </div>
-            <span>{openAnalisis ? "▲" : "▼"}</span>
-          </button>
-          <Collapsible open={openAnalisis}>
-            <div className="ps-4 mt-2">
+        <div className="mt-4">
               <Link to="/reportes" className="d-block text-light text-decoration-none mb-2">
                 <ChartBarIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Reportes
               </Link>
-              <Link to="/configuracion" className="d-block text-light text-decoration-none mb-2">
-                <Cog6ToothIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Configuración del Restaurante
-              </Link>
             </div>
-          </Collapsible>
-        </div>
       </nav>
 
       {/* Cerrar sesión */}

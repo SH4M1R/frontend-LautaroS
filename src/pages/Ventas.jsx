@@ -1,210 +1,276 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { FaTrash } from "react-icons/fa";
 import MetodoPago from "../components/MetodoPago";
+import Swal from "sweetalert2";
 
 export default function Ventas() {
-  const [busqueda, setBusqueda] = useState("");
-  const [carrito, setCarrito] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
-  const [modalPagoOpen, setModalPagoOpen] = useState(false);
-  const [cliente, setCliente] = useState("");
-  const [fechaActual, setFechaActual] = useState(new Date());
+  const [carrito, setCarrito] = useState([]);
+  const [nombreCliente, setNombreCliente] = useState("");
+  const [documentoCliente, setDocumentoCliente] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+  const [metodoPago, setMetodoPago] = useState("EFECTIVO");
+  const [montoPagado, setMontoPagado] = useState(0);
+  const [vuelto, setVuelto] = useState(0);
+  const [ultimos4, setUltimos4] = useState("");
+  const [codigoIzipay, setCodigoIzipay] = useState(0);
 
   useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await axios.get("http://localhost:9000/api/categorias");
+        setCategorias(res.data);
+      } catch (error) {
+        console.error("Error obteniendo categorías", error);
+      }
+    };
+
+    const fetchProductos = async () => {
+      try {
+        const res = await axios.get("http://localhost:9000/api/productos");
+        setProductos(res.data);
+      } catch (error) {
+        console.error("Error obteniendo productos", error);
+      }
+    };
+
+    fetchCategorias();
     fetchProductos();
-    const intervalo = setInterval(() => setFechaActual(new Date()), 1000);
-    return () => clearInterval(intervalo);
   }, []);
 
-  const fetchProductos = async () => {
-    try {
-      const res = await fetch("http://localhost:9000/api/productos");
-      const data = await res.json();
-      setProductos(data.filter((p) => p.estado));
-    } catch (err) {
-      console.error(err);
+  const agregarAlCarrito = (producto) => {
+    const exist = carrito.find((p) => p.idProducto === producto.idProducto);
+    if (exist) {
+      setCarrito(
+        carrito.map((p) =>
+          p.idProducto === producto.idProducto
+            ? { ...p, cantidad: p.cantidad + 1 }
+            : p
+        )
+      );
+    } else {
+      setCarrito([...carrito, { ...producto, cantidad: 1 }]);
     }
   };
 
-  const productosFiltrados = productos.filter(
-    (p) =>
-      p.producto.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (p.descripcion && p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
-  );
-
-  const agregarAlCarrito = (producto) => {
-    if (!producto.estado) return;
-    const existe = carrito.find((item) => item.idProducto === producto.idProducto);
-    if (existe) {
-      setCarrito(
-        carrito.map((item) =>
-          item.idProducto === producto.idProducto ? { ...item, cantidad: item.cantidad + 1 } : item
-        )
-      );
-    } else setCarrito([...carrito, { ...producto, cantidad: 1 }]);
-  };
-
-  const modificarCantidad = (idProducto, incremento) => {
+  const cambiarCantidad = (id, cantidad) => {
     setCarrito(
-      carrito.map((item) =>
-        item.idProducto === idProducto ? { ...item, cantidad: Math.max(item.cantidad + incremento, 1) } : item
-      )
+      carrito
+        .map((item) =>
+          item.idProducto === id
+            ? { ...item, cantidad: item.cantidad + cantidad }
+            : item
+        )
+        .filter((item) => item.cantidad > 0)
     );
   };
 
-  const eliminarProductoCarrito = (idProducto) => setCarrito(carrito.filter((item) => item.idProducto !== idProducto));
+  const quitarDelCarrito = (id) => {
+    setCarrito(carrito.filter((item) => item.idProducto !== id));
+  };
 
-  const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
+  const total = carrito.reduce(
+    (acc, item) => acc + item.precioVenta * item.cantidad,
+    0
+  );
 
-  const fechaFormateada = fechaActual.toLocaleString();
+  const finalizarVenta = async () => {
+    if (carrito.length === 0) {
+      Swal.fire("Error", "El carrito está vacío", "error");
+      return;
+    }
+
+    const detalles = carrito.map((item) => ({
+      producto: { idProducto: item.idProducto },
+      subtotal: item.precioVenta * item.cantidad,
+      stock: item.cantidad,
+      metodoPago,
+      montoPagado: metodoPago === "EFECTIVO" ? montoPagado : 0,
+      vuelto: metodoPago === "EFECTIVO" ? vuelto : 0,
+      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : "",
+      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : "",
+    }));
+
+    const request = {
+      total,
+      cliente: {
+        nombre: nombreCliente || "CLIENTE VARIOS",
+        documento: documentoCliente || 0,
+      },
+      detalles,
+    };
+
+    try {
+      await axios.post("http://localhost:9000/api/ventas/registrar", request);
+      Swal.fire("Éxito", "Venta registrada correctamente", "success");
+      setCarrito([]);
+      setNombreCliente("");
+      setDocumentoCliente("");
+      setMontoPagado(0);
+      setVuelto(0);
+      setUltimos4("");
+      setCodigoIzipay("");
+    } catch (error) {
+      console.error("Error registrando venta", error);
+      Swal.fire("Error", "No se pudo registrar la venta", "error");
+    }
+  };
+
+  const productosFiltrados = productos.filter((p) =>
+    p.producto.toLowerCase().includes(busqueda.toLowerCase()) &&
+    (categoriaSeleccionada === "" || p.categoria?.nombreCategoria === categoriaSeleccionada)
+  );
 
   return (
-    <div className="container-fluid mt-3">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="d-flex align-items-center gap-3">
-          <i className="bi bi-basket fs-3 text-primary"></i>
-          <h2 className="mb-0">Ventas</h2>
-        </div>
-        <div className="text-end">
-          <small className="text-muted">{fechaFormateada}</small>
-        </div>
-      </div>
+    <div className="container-fluid" style={{ backgroundColor: "white" }}>
+      <div className="row p-3">
+        <div className="col-md-8 border-end" style={{ height: "100vh", overflowY: "auto" }}>
+          <h4 className="fw-bold text-danger mb-3">Gestión de Ventas</h4>
 
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control form-control-lg"
-          placeholder="Nombre del cliente..."
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-        />
-      </div>
+          <div className="row mb-3">
+            <div className="col-md-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Nombre del cliente"
+                value={nombreCliente}
+                onChange={(e) => setNombreCliente(e.target.value)}
+              />
+            </div>
+            <div className="col-md-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Documento"
+                value={documentoCliente}
+                onChange={(e) => setDocumentoCliente(e.target.value)}
+              />
+            </div>
+            <div className="col-md-4">
+              <select
+                className="form-select"
+                value={categoriaSeleccionada}
+                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map((c) => (
+                  <option key={c.idCategoria} value={c.idCategoria}>
+                    {c.nombreCategoria}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-      <div className="row h-100">
-        {/* Productos */}
-        <div
-          className="col-md-8 mb-3"
-          style={{ maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}
-        >
-          <div className="input-group mb-3">
-            <span className="input-group-text">
-              <i className="bi bi-search"></i>
-            </span>
+          <div className="mb-3">
             <input
               type="text"
               className="form-control"
-              placeholder="Buscar producto..."
+              placeholder="Buscar productos..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
 
-          <div className="row g-3">
-            {productosFiltrados.length === 0 && <p className="text-muted">No hay productos disponibles.</p>}
-            {productosFiltrados.map((p) => (
-              <div key={p.idProducto} className="col-sm-6 col-md-4 col-lg-3">
-                <div
-                  className="card h-100 shadow-sm border-0"
-                  style={{ cursor: p.estado ? "pointer" : "not-allowed", transition: "transform 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                >
+          <div className="row">
+            {productosFiltrados.map((prod) => (
+              <div key={prod.idProducto} className="col-md-4 mb-3">
+                <div className="card h-100 shadow-sm">
                   <img
-                    src={p.imagen ? `http://localhost:9000/upload/${p.imagen}` : "https://via.placeholder.com/150"}
-                    alt={p.producto}
+                    src={`http://localhost:9000${prod.imagen}`}
                     className="card-img-top"
+                    alt={prod.producto}
                     style={{ height: "150px", objectFit: "cover" }}
                   />
-                  <div className="card-body d-flex flex-column">
-                    <h6 className="card-title text-center mb-1">{p.producto}</h6>
-                    <p className="text-center text-muted small mb-2">
-                      {p.descripcion || "Sin descripción"}
-                    </p>
-                    <p className="text-center text-primary fw-bold mb-2">S/ {p.precioVenta}</p>
+                  <div className="card-body">
+                    <h6 className="fw-bold">{prod.producto}</h6>
+                    <p className="text-muted">{prod.descripcion}</p>
+                    <p className="fw-bold text-danger">S/ {prod.precioVenta.toFixed(2)}</p>
                     <button
-                      className={`btn btn-${p.estado ? "primary" : "secondary"} btn-sm mt-auto`}
-                      disabled={!p.estado}
-                      onClick={() => agregarAlCarrito(p)}
+                      className="btn btn-danger w-100"
+                      onClick={() => agregarAlCarrito(prod)}
                     >
-                      <i className="bi bi-bag-plus me-1"></i> Agregar
+                      Agregar
                     </button>
                   </div>
                 </div>
               </div>
             ))}
+            {productosFiltrados.length === 0 && (
+              <p className="text-center mt-4 text-muted">No hay productos que coincidan.</p>
+            )}
           </div>
         </div>
 
-        {/* Carrito */}
-        <div className="col-md-4" style={{ height: "500px", overflowY: "auto" }}>
-          <div className="card shadow-sm h-100">
-            <div className="card-body d-flex flex-column h-100">
-              <h5 className="mb-3"><i className="bi bi-cart me-2"></i>Carrito</h5>
+        <div className="col-md-4">
+          <h4 className="fw-bold text-danger mb-3">Carrito</h4>
 
-              <div className="flex-fill overflow-auto mb-3">
-                {carrito.length === 0 ? (
-                  <p className="text-muted">No hay productos en el carrito.</p>
-                ) : (
-                  <ul className="list-group">
-                    {carrito.map((item) => (
-                      <li
-                        key={item.idProducto}
-                        className="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row"
-                      >
-                        <div>
-                          <strong>{item.producto}</strong>
-                          <div className="d-flex align-items-center gap-1 mt-1">
-                            <button
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => modificarCantidad(item.idProducto, -1)}
-                            >
-                              -
-                            </button>
-                            <span>{item.cantidad}</span>
-                            <button
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => modificarCantidad(item.idProducto, 1)}
-                            >
-                              +
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger ms-2"
-                              onClick={() => eliminarProductoCarrito(item.idProducto)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </div>
-                        </div>
-                        <span className="mt-2 mt-md-0">S/ {item.precioVenta * item.cantidad}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="mt-auto border-top pt-3">
-                <h5>Total: S/ {total}</h5>
+          <div
+            style={{ height: "300px", overflowY: "auto", border: "1px solid #dee2e6", padding: "10px" }}
+          >
+            {carrito.map((item) => (
+              <div key={item.idProducto} className="d-flex align-items-center border-bottom py-2">
+                <span className="fw-bold flex-grow-1">{item.producto}</span>
+                <div className="d-flex align-items-center me-3">
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => cambiarCantidad(item.idProducto, -1)}
+                  >
+                    -
+                  </button>
+                  <span className="mx-2 fw-bold">{item.cantidad}</span>
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => cambiarCantidad(item.idProducto, 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="fw-bold me-3">
+                  S/ {(item.precioVenta * item.cantidad).toFixed(2)}
+                </span>
                 <button
-                  className="btn btn-success w-100 mt-2"
-                  onClick={() => setModalPagoOpen(true)}
+                  className="btn btn-sm text-danger"
+                  onClick={() => quitarDelCarrito(item.idProducto)}
                 >
-                  <i className="bi bi-credit-card me-1"></i> Finalizar Venta
+                  <FaTrash />
                 </button>
               </div>
-            </div>
+            ))}
+            {carrito.length === 0 && <p className="text-center mt-4 text-muted">Carrito vacío</p>}
           </div>
+
+          <MetodoPago
+            metodoPago={metodoPago}
+            setMetodoPago={setMetodoPago}
+            montoPagado={montoPagado}
+            setMontoPagado={setMontoPagado}
+            vuelto={vuelto}
+            setVuelto={setVuelto}
+            total={total}
+            ultimos4={ultimos4}
+            setUltimos4={setUltimos4}
+            codigoIzipay={codigoIzipay}
+            setCodigoIzipay={setCodigoIzipay}
+          />
+
+          <div className="d-flex justify-content-between mt-3 p-2 fw-bold fs-5">
+            <span>Total:</span>
+            <span className="text-danger">S/ {total.toFixed(2)}</span>
+          </div>
+
+          <button
+            className="btn btn-danger w-100 mt-3 p-3 fw-bold"
+            onClick={finalizarVenta}
+          >
+            Finalizar Venta
+          </button>
         </div>
       </div>
-
-      {modalPagoOpen && (
-        <MetodoPago
-          total={total}
-          cliente={cliente}
-          onClose={() => {
-            setModalPagoOpen(false);
-            window.location.reload();
-          }}
-        />
-      )}
     </div>
   );
 }
