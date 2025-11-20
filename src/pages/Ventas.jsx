@@ -152,17 +152,17 @@ export default function Ventas() {
             </div>
             <div className="col-md-4">
               <select
-                className="form-select"
-                value={categoriaSeleccionada}
-                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map((c) => (
-                  <option key={c.idCategoria} value={c.idCategoria}>
-                    {c.nombreCategoria}
-                  </option>
-                ))}
-              </select>
+              className="form-select"
+              value={categoriaSeleccionada}
+              onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((cat) => (
+                <option key={cat.idCategoria} value={cat.nombreCategoria}>
+                  {cat.nombreCategoria}
+                </option>
+              ))}
+            </select>
             </div>
           </div>
 

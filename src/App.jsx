@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./pages/Menu";
+import Reportes from "./pages/Reportes";
 import Ventas from "./pages/Ventas";
 import Empleados from "./pages/Empleados";
 import PrivateRoute from "./components/PrivateRoute";
@@ -24,6 +25,7 @@ function App() {
             <Route path="/empleados" element={<Empleados />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/ventas" element={<Ventas />} />
+            <Route path="/reportes" element={<Reportes />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

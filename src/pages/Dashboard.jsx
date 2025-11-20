@@ -2,56 +2,58 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import DashboardCard from "../components/DashboardCard";
 import DashboardChart from "../components/DashboardChart";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState({
     ventasHoy: 0,
-    pedidosActivos: 0,
-    platosVendidos: 0,
+    ventasRealizadas: 0,
+    platosExistentes: 0,
     clientes: 0,
   });
 
-  const [pedidos, setPedidos] = useState([]);
-  const [menu, setMenu] = useState([]);
+  const [ventasSemanal, setVentasSemanal] = useState([]);
 
   useEffect(() => {
-    const storedMetrics = JSON.parse(localStorage.getItem("metrics"));
-    const storedPedidos = JSON.parse(localStorage.getItem("pedidos"));
-    const storedMenu = JSON.parse(localStorage.getItem("menu"));
+    const fetchDashboard = async () => {
+      try {
+        const res = await axios.get("http://localhost:9000/api/dashboard");
+        const data = res.data;
 
-    if (storedMetrics) setMetrics(storedMetrics);
-    if (storedPedidos) setPedidos(storedPedidos);
-    if (storedMenu && storedMenu.length > 0) {
-      setMenu(storedMenu);
-    }
+        setMetrics({
+          ventasHoy: data.ventasHoy,
+          ventasRealizadas: data.ventasRealizadas,
+          platosExistentes: data.platosExistentes,
+          clientes: data.clientes,
+        });
+
+        setVentasSemanal(data.ventasSemanal);
+      } catch (error) {
+        console.error("Error cargando dashboard", error);
+      }
+    };
+
+    fetchDashboard();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("metrics", JSON.stringify(metrics));
-    localStorage.setItem("pedidos", JSON.stringify(pedidos));
-    localStorage.setItem("menu", JSON.stringify(menu));
-  }, [metrics, pedidos, menu]);
-
   return (
-    <div className="d-flex">
+    <div className="d-flex" style={{ backgroundColor: "#ffffff", minHeight: "100vh" }}>
       <Sidebar />
 
       <div className="container-fluid p-4">
-        <h2 className="mb-4">Dashboard del Restaurante</h2>
+        <h2 className="mb-4 text-danger">Dashboard del Restaurante</h2>
 
-        {/* Tarjetas de métricas */}
         <div className="row mb-4">
           <DashboardCard title="Ventas Hoy" value={`S/ ${metrics.ventasHoy}`} />
-          <DashboardCard title="Pedidos Activos" value={metrics.pedidosActivos} />
-          <DashboardCard title="Platos Vendidos" value={metrics.platosVendidos} />
+          <DashboardCard title="Ventas Realizadas" value={metrics.ventasRealizadas} />
+          <DashboardCard title="Platos Existentes" value={metrics.platosExistentes} />
           <DashboardCard title="Clientes" value={metrics.clientes} />
         </div>
 
-        {/* Gráfico + Notificaciones */}
         <div className="row mb-4">
           <div className="col-md-8">
-            <DashboardChart />
+            <DashboardChart ventasSemanal={ventasSemanal} />
           </div>
         </div>
       </div>

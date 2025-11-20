@@ -2,23 +2,38 @@ import React from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS } from "chart.js/auto";
 
-const DashboardChart = () => {
+const DashboardChart = ({ ventasSemanal }) => {
+  const labels = ventasSemanal.map((v) => v.dia);
+  const dataValues = ventasSemanal.map((v) => v.total);
+
   const data = {
-    labels: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+    labels: labels,
     datasets: [
       {
-        label: "Ventas",
-        data: [120, 200, 150, 300, 250],
-        backgroundColor: "rgba(75,192,192,0.6)",
+        label: "Ventas (S/)",
+        data: dataValues,
+        backgroundColor: "rgba(220,53,69,0.7)", // rojo Bootstrap
+        borderColor: "rgba(220,53,69,1)",
+        borderWidth: 1,
       },
     ],
   };
 
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      y: { beginAtZero: true },
+    },
+  };
+
   return (
     <div className="card shadow-sm">
-      <div className="card-header">📈 Ventas Semanales</div>
+      <div className="card-header text-danger fw-bold">📈 Ventas Semanales</div>
       <div className="card-body">
-        <Bar data={data} />
+        <Bar data={data} options={options} />
       </div>
     </div>
   );

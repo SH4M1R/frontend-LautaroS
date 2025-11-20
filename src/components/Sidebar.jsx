@@ -71,7 +71,7 @@ export default function Sidebar() {
           </Collapsible>
         </div>
         <div className="mt-4">
-              <Link to="/reportes" className="d-block text-light text-decoration-none mb-2">
+              <Link to="/Reportes" className="d-block text-light text-decoration-none mb-2">
                 <ChartBarIcon style={{ width: "22px", marginRight: "8px", color: "red" }} /> Reportes
               </Link>
             </div>
