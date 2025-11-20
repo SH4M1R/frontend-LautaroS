@@ -44,7 +44,7 @@ export default function Sidebar() {
         <Link to="/dashboard" className="d-flex align-items-center text-decoration-none text-light mb-3">
           <ChartBarIcon style={{ width: "24px", marginRight: "10px", color: "red" }} /> Dashboard
         </Link>
-        <Link to="/arqueo-caja" className="d-flex align-items-center text-decoration-none text-light mb-3">
+        <Link to="/ArqueoCaja" className="d-flex align-items-center text-decoration-none text-light mb-3">
           <CurrencyDollarIcon style={{ width: "24px", marginRight: "10px", color: "red" }} /> Arqueo de Caja
         </Link>
         <Link to="/ventas" className="d-flex align-items-center text-decoration-none text-light mb-3">

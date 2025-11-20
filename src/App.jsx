@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Menu from "./pages/Menu";
 import Reportes from "./pages/Reportes";
+import ArqueoCaja from "./pages/ArqueoCaja";
 import Ventas from "./pages/Ventas";
 import Empleados from "./pages/Empleados";
 import PrivateRoute from "./components/PrivateRoute";
@@ -23,6 +24,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/empleados" element={<Empleados />} />
+            <Route path="/ArqueoCaja" element={<ArqueoCaja />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/ventas" element={<Ventas />} />
             <Route path="/reportes" element={<Reportes />} />
