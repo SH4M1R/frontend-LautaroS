@@ -11,45 +11,42 @@ export default function Reportes() {
   const [showModal, setShowModal] = useState(false);
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-
   const [paginaActual, setPaginaActual] = useState(1);
+
   const ventasPorPagina = 10;
 
+  // Cargar ventas
   useEffect(() => {
     axios.get(`${API}/api/ventas/listar`)
-      .then((res) => setVentas(res.data))
-      .catch((err) => console.error("Error obteniendo ventas:", err));
+      .then(res => setVentas(res.data))
+      .catch(err => console.error("Error obteniendo ventas:", err));
   }, []);
 
+  // Filtrado y orden
   const ventasOrdenadas = [...ventas].sort((a, b) => b.idVenta - a.idVenta);
-
-  const ventasFiltradas = ventasOrdenadas.filter((v) => {
+  const ventasFiltradas = ventasOrdenadas.filter(v => {
     const fecha = new Date(v.fechaVenta);
     const desde = fechaDesde ? new Date(fechaDesde) : null;
     const hasta = fechaHasta ? new Date(fechaHasta) : null;
-
     if (desde && fecha < desde) return false;
     if (hasta && fecha > hasta) return false;
     return true;
   });
 
+  // Paginación
   const indexUltimaVenta = paginaActual * ventasPorPagina;
   const indexPrimeraVenta = indexUltimaVenta - ventasPorPagina;
   const ventasPaginadas = ventasFiltradas.slice(indexPrimeraVenta, indexUltimaVenta);
   const totalPaginas = Math.ceil(ventasFiltradas.length / ventasPorPagina);
 
+  // Detalle venta
   const handleVerDetalle = (idVenta) => {
     axios.get(`${API}/api/ventas/${idVenta}`)
-      .then((res) => {
-        setVentaSeleccionada(res.data);
-        setShowModal(true);
-      })
-      .catch((err) => {
-        console.error("Error al obtener detalle:", err);
-        alert("No se pudo cargar el detalle.");
-      });
+      .then(res => { setVentaSeleccionada(res.data); setShowModal(true); })
+      .catch(err => { console.error("Error al obtener detalle:", err); alert("No se pudo cargar el detalle."); });
   };
 
+  // Imprimir voucher
   const handleImprimirVoucher = (idVenta) => {
     window.open(`${API}/api/ventas/${idVenta}/boleta`, "_blank");
   };
@@ -89,7 +86,7 @@ export default function Reportes() {
                 </tr>
               </thead>
               <tbody>
-                {ventasPaginadas.map((venta) => (
+                {ventasPaginadas.map(venta => (
                   <tr key={venta.idVenta}>
                     <td>{venta.idVenta}</td>
                     <td>{venta.cliente?.nombre || "-"}</td>
@@ -112,7 +109,9 @@ export default function Reportes() {
                 <Pagination.First onClick={() => setPaginaActual(1)} disabled={paginaActual === 1} />
                 <Pagination.Prev onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))} disabled={paginaActual === 1} />
                 {[...Array(totalPaginas)].map((_, i) => (
-                  <Pagination.Item key={i + 1} active={i + 1 === paginaActual} onClick={() => setPaginaActual(i + 1)}>{i + 1}</Pagination.Item>
+                  <Pagination.Item key={i + 1} active={i + 1 === paginaActual} onClick={() => setPaginaActual(i + 1)}>
+                    {i + 1}
+                  </Pagination.Item>
                 ))}
                 <Pagination.Next onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))} disabled={paginaActual === totalPaginas} />
                 <Pagination.Last onClick={() => setPaginaActual(totalPaginas)} disabled={paginaActual === totalPaginas} />
@@ -128,7 +127,7 @@ export default function Reportes() {
         </Modal.Header>
         <Modal.Body>
           {ventaSeleccionada ? (
-            <div>
+            <>
               <Row className="mb-2">
                 <Col><strong>Cliente:</strong> {ventaSeleccionada.cliente?.nombre || "-"}</Col>
                 <Col><strong>Total:</strong> S/ {ventaSeleccionada.total?.toFixed(2) || "0.00"}</Col>
@@ -136,7 +135,6 @@ export default function Reportes() {
               <Row className="mb-3">
                 <Col><strong>Fecha:</strong> {new Date(ventaSeleccionada.fechaVenta).toLocaleString()}</Col>
               </Row>
-
               <div className="table-responsive">
                 <Table striped bordered hover>
                   <thead className="table-light">
@@ -154,7 +152,7 @@ export default function Reportes() {
                   </thead>
                   <tbody>
                     {ventaSeleccionada.detalles && ventaSeleccionada.detalles.length > 0 ? (
-                      ventaSeleccionada.detalles.map((detalle) => (
+                      ventaSeleccionada.detalles.map(detalle => (
                         <tr key={detalle.idDetalleVenta}>
                           <td>{detalle.producto?.producto || "-"}</td>
                           <td>{detalle.producto?.descripcion || "-"}</td>
@@ -173,8 +171,10 @@ export default function Reportes() {
                   </tbody>
                 </Table>
               </div>
-            </div>
-          ) : <p>Cargando detalle...</p>}
+            </>
+          ) : (
+            <p>Cargando detalle...</p>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>Cerrar</Button>

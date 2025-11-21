@@ -14,7 +14,6 @@ export default function Menu() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
 
   const [showModalProducto, setShowModalProducto] = useState(false);
   const [showModalCategoria, setShowModalCategoria] = useState(false);
@@ -30,7 +29,6 @@ export default function Menu() {
   };
 
   const fetchProductos = async () => {
-    setLoading(true);
     try {
       const res = await fetchAPI(API_PRODUCTS);
       const all = res.data || [];
@@ -52,8 +50,6 @@ export default function Menu() {
       setProductos(filtered.slice(start, start + PAGE_SIZE));
     } catch (err) {
       console.error("Error fetching productos", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -138,48 +134,44 @@ export default function Menu() {
             <small className="text-muted">Resultados por página: {PAGE_SIZE}</small>
           </div>
 
-          {loading ? (
-            <div className="text-center py-5">Cargando...</div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-striped table-bordered align-middle">
-                <thead className="table-danger">
-                  <tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Precio Venta</th>
-                    <th>Categoría</th>
-                    <th>Imagen</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+          <div className="table-responsive">
+            <table className="table table-striped table-bordered align-middle">
+              <thead className="table-danger">
+                <tr>
+                  <th>#</th>
+                  <th>Nombre</th>
+                  <th>Precio Venta</th>
+                  <th>Categoría</th>
+                  <th>Imagen</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productos.map((p, idx) => (
+                  <tr key={p.idProducto || idx}>
+                    <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                    <td>{p.producto || p.Producto}</td>
+                    <td>{p.precioVenta || p.PrecioVenta}</td>
+                    <td>{p.categoria?.nombreCategoria || "Sin categoría"}</td>
+                    <td>
+                      {p.imagen && <img src={`${import.meta.env.VITE_API_URL}${p.imagen}`} alt={p.producto} className="img-thumbnail" style={{ width: "50px", height: "50px", objectFit: "cover" }} />}
+                    </td>
+                    <td>
+                      <div className="form-check form-switch">
+                        <input className="form-check-input" type="checkbox" checked={!!p.estado} onChange={() => handleToggleEstado(p)} />
+                        <label className="form-check-label">{p.estado ? "Activo" : "Inactivo"}</label>
+                      </div>
+                    </td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-danger me-1" onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}>Editar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.idProducto)}>Eliminar</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {productos.map((p, idx) => (
-                    <tr key={p.idProducto || idx}>
-                      <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
-                      <td>{p.producto || p.Producto}</td>
-                      <td>{p.precioVenta || p.PrecioVenta}</td>
-                      <td>{p.categoria?.nombreCategoria || "Sin categoría"}</td>
-                      <td>
-                        {p.imagen && <img src={`${import.meta.env.VITE_API_URL}${p.imagen}`} alt={p.producto} className="img-thumbnail" style={{ width: "50px", height: "50px", objectFit: "cover" }} />}
-                      </td>
-                      <td>
-                        <div className="form-check form-switch">
-                          <input className="form-check-input" type="checkbox" checked={!!p.estado} onChange={() => handleToggleEstado(p)} />
-                          <label className="form-check-label">{p.estado ? "Activo" : "Inactivo"}</label>
-                        </div>
-                      </td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-danger me-1" onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}>Editar</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.idProducto)}>Eliminar</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

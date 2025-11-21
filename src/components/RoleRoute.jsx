@@ -9,10 +9,7 @@ export default function RoleRoute({ allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  const userRole =
-    typeof usuario.rol === "string"
-      ? usuario.rol
-      : usuario.rol?.rol;
+  const userRole = typeof usuario.rol === "string" ? usuario.rol : usuario.rol?.rol;
 
   if (!allowedRoles.includes(userRole)) {
     return <Navigate to="/dashboard" replace />;

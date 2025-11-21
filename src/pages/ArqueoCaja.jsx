@@ -44,9 +44,7 @@ export default function ArqueoCaja() {
       });
 
       setVentasHoy(ventasDeHoy);
-
-      const total = ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0);
-      setTotalVentas(total);
+      setTotalVentas(ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0));
 
       setCargando(false);
     } catch (error) {
@@ -177,7 +175,6 @@ export default function ArqueoCaja() {
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Resultado del Arqueo</Modal.Title>
         </Modal.Header>
-
         <Modal.Body>
           <div className="text-center">
             <h5>Monto Inicial: S/ {montoInicial}</h5>
@@ -186,7 +183,6 @@ export default function ArqueoCaja() {
             <h3 className="fw-bold text-danger">Total en Caja: S/ {arqueoFinal?.toFixed(2)}</h3>
           </div>
         </Modal.Body>
-
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>Cerrar</Button>
         </Modal.Footer>

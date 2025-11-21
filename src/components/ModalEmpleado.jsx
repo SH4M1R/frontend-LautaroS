@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 
+const API = import.meta.env.VITE_API_URL;
+
 const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
     const isEditing = !!empleadoData;
     const initialData = { user: '', username: '', contrasena: '', rol: { idRol: '' } };
@@ -29,7 +31,7 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
 
     const fetchRoles = async () => {
         try {
-            const response = await fetch('http://localhost:9000/api/roles');
+            const response = await fetch(`${API}/api/roles`);
             const rolesList = await response.json();
             setRoles(rolesList);
             if (!isEditing && rolesList.length > 0) {
@@ -56,7 +58,7 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
 
         if (!data.rol.idRol) { setError("Seleccione un Rol."); setLoading(false); return; }
         
-        const url = isEditing ? `http://localhost:9000/api/empleados/${empleadoData.idEmpleado}` : 'http://localhost:9000/api/empleados';
+        const url = isEditing ? `${API}/api/empleados/${empleadoData.idEmpleado}` : `${API}/api/empleados`;
         const method = isEditing ? 'PUT' : 'POST';
 
         try {

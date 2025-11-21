@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import qrYape from "../assets/qr-yape.jpg";
 
 export default function MetodoPago({
   metodoPago,
@@ -67,7 +68,7 @@ export default function MetodoPago({
         <div className="text-center">
           <p className="fw-bold m-1">Escanea el QR</p>
           <img
-            src="/src/assets/qr-yape.jpg"
+            src={qrYape}
             alt="QR Yape"
             style={{ width: "70%", borderRadius: 10 }}
           />
