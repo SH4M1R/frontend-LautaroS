@@ -1,0 +1,13 @@
+services:
+  - type: static
+    name: frontend-lautaros
+    branch: featureDespliegueFront
+    buildCommand: "npm install && npm run build"
+    publishPath: "dist"
+    envVars:
+      - key: VITE_API_URL
+        value: "https://backend-lautaros-a1gx.onrender.com"
+    redirects:
+      - source: "/*"
+        destination: "/index.html"
+        status: 200
