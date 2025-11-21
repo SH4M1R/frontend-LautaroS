@@ -2,12 +2,12 @@ import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
 const AuthContext = createContext();
+const API = import.meta.env.VITE_API_URL;
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Ejecuta esto al iniciar la app
   useEffect(() => {
     const storedUser = localStorage.getItem("usuario");
     const token = localStorage.getItem("token");
@@ -17,17 +17,10 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Validar token con backend
     axios
-      .get(`${import.meta.env.VITE_API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUsuario(res.data);
-      })
-      .catch(() => {
-        logout(); // token inválido o expirado
-      })
+      .get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => setUsuario(res.data))
+      .catch(() => logout())
       .finally(() => setLoading(false));
   }, []);
 

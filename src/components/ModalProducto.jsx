@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Image } from "react-bootstrap";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function ModalProducto({ isOpen, onClose, onSave, categorias = [], productoEditado }) {
   const [producto, setProducto] = useState({
     producto: "",
@@ -100,7 +102,7 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias = []
             <Form.Label>Imagen</Form.Label>
             {producto.imagen && !imagenArchivo && (
               <div className="mb-2">
-                <Image src={`http://localhost:9000${producto.imagen}`} fluid thumbnail style={{ maxHeight: "150px" }} />
+                <Image src={`${API}${producto.imagen}`} fluid thumbnail style={{ maxHeight: "150px" }} />
               </div>
             )}
             <Form.Control type="file" onChange={handleImagenChange} accept="image/*" />

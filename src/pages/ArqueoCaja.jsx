@@ -3,6 +3,8 @@ import axios from "axios";
 import { Modal, Button, Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function ArqueoCaja() {
   const [montoInicial, setMontoInicial] = useState("");
   const [ventasHoy, setVentasHoy] = useState([]);
@@ -12,15 +14,13 @@ export default function ArqueoCaja() {
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  // ---- Cargar caja y ventas del día ----
   const cargarCajaHoy = async () => {
     try {
       setCargando(true);
 
-      // 1️⃣ Obtener caja del día
       let caja = null;
       try {
-        const resCaja = await axios.get("http://localhost:9000/api/caja/hoy");
+        const resCaja = await axios.get(`${API}/api/caja/hoy`);
         caja = resCaja.data || null;
         setCajaHoy(caja);
         setMontoInicial(caja?.montoInicial || "");
@@ -30,11 +30,9 @@ export default function ArqueoCaja() {
         setMontoInicial("");
       }
 
-      // 2️⃣ Obtener todas las ventas
-      const resVentas = await axios.get("http://localhost:9000/api/ventas/listar");
+      const resVentas = await axios.get(`${API}/api/ventas/listar`);
       const todasVentas = resVentas.data || [];
 
-      // 3️⃣ Filtrar ventas del día
       const hoy = new Date();
       const ventasDeHoy = todasVentas.filter((v) => {
         const fechaVenta = new Date(v.fechaVenta);
@@ -47,7 +45,6 @@ export default function ArqueoCaja() {
 
       setVentasHoy(ventasDeHoy);
 
-      // 4️⃣ Calcular total de ventas
       const total = ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0);
       setTotalVentas(total);
 
@@ -62,7 +59,6 @@ export default function ArqueoCaja() {
     cargarCajaHoy();
   }, []);
 
-  // ---- Registrar monto inicial ----
   const registrarMontoInicial = async () => {
     if (!montoInicial || isNaN(montoInicial)) {
       alert("Ingresa un monto válido.");
@@ -70,9 +66,7 @@ export default function ArqueoCaja() {
     }
 
     try {
-      await axios.post("http://localhost:9000/api/caja/abrir", {
-        montoInicial: parseFloat(montoInicial),
-      });
+      await axios.post(`${API}/api/caja/abrir`, { montoInicial: parseFloat(montoInicial) });
       alert("Caja abierta correctamente.");
       cargarCajaHoy();
     } catch (error) {
@@ -81,7 +75,6 @@ export default function ArqueoCaja() {
     }
   };
 
-  // ---- Cerrar caja ----
   const cerrarCaja = async () => {
     if (!cajaHoy?.idCaja) {
       alert("No hay caja abierta para cerrar.");
@@ -89,11 +82,7 @@ export default function ArqueoCaja() {
     }
 
     try {
-      const res = await axios.post("http://localhost:9000/api/caja/cerrar", {
-        idCaja: cajaHoy.idCaja,
-      });
-
-      // Aquí usamos el total en caja devuelto por el backend
+      const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
       setArqueoFinal(res.data.totalEnCaja || 0);
       setShowModal(true);
       cargarCajaHoy();
@@ -109,7 +98,6 @@ export default function ArqueoCaja() {
         Arqueo de Caja
       </h2>
 
-      {/* Monto inicial */}
       <div className="mb-4 p-4 bg-white rounded shadow-sm border border-danger">
         <label className="form-label fw-bold" style={{ color: "#b71c1c" }}>
           Monto Inicial del Día
@@ -133,7 +121,6 @@ export default function ArqueoCaja() {
         </button>
       </div>
 
-      {/* Ventas del día */}
       <div className="mt-4 p-4 bg-white rounded shadow-sm border border-danger">
         <h4 className="mb-4 text-danger fw-bold">Ventas del Día</h4>
 
@@ -175,7 +162,6 @@ export default function ArqueoCaja() {
         </h5>
       </div>
 
-      {/* Botón cerrar caja */}
       <div className="text-center mt-5">
         <button
           className="btn btn-danger btn-lg px-5"
@@ -187,7 +173,6 @@ export default function ArqueoCaja() {
         </button>
       </div>
 
-      {/* Modal resultado */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Resultado del Arqueo</Modal.Title>
@@ -203,9 +188,7 @@ export default function ArqueoCaja() {
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cerrar
-          </Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Cerrar</Button>
         </Modal.Footer>
       </Modal>
     </div>

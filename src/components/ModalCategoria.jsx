@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function ModalCategoria({ isOpen, onClose, onSave }) {
   const [categoria, setCategoria] = useState("");
 
@@ -8,7 +10,7 @@ export default function ModalCategoria({ isOpen, onClose, onSave }) {
     if (!categoria.trim()) return alert("Ingresa un nombre de categoría");
 
     try {
-      const res = await fetch("http://localhost:9000/api/categorias", {
+      const res = await fetch(`${API}/api/categorias`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombreCategoria: categoria }),

@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 import DashboardCard from "../components/DashboardCard";
 import DashboardChart from "../components/DashboardChart";
 import DashboardPieChart from "../components/DashboardPieChart";
-import axios from "axios";
+import { fetchAPI } from "../api";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Dashboard() {
@@ -20,7 +20,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await axios.get("http://localhost:9000/api/dashboard");
+        const res = await fetchAPI("/api/dashboard");
         const data = res.data;
 
         setMetrics({
@@ -57,7 +57,6 @@ export default function Dashboard() {
 
         {/* Gráficos */}
         <div className="row mb-4">
-          {/* Gráfico de ventas semanal */}
           <div className="col-md-8 mb-4">
             <div className="card shadow-sm h-100">
               <div className="card-body">
@@ -67,7 +66,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Gráfico circular de platos más vendidos */}
           <div className="col-md-4 mb-4">
             <div className="card shadow-sm h-100">
               <div className="card-body">
