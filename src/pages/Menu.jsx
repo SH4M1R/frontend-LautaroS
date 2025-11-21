@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import ModalProducto from '../components/ModalProducto';
-import ModalCategoria from '../components/ModalCategoria';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import ModalProducto from "../components/ModalProducto";
+import ModalCategoria from "../components/ModalCategoria";
 
-const API_PRODUCTS = 'http://localhost:9000/api/productos';
-const API_CATEGORIES = 'http://localhost:9000/api/categorias';
 const PAGE_SIZE = 20;
 
 export default function Menu() {
+  const API = import.meta.env.VITE_API_URL; // 👈 Render o Local
+  const API_PRODUCTS = `${API}/api/productos`;
+  const API_CATEGORIES = `${API}/api/categorias`;
+
   const [productos, setProductos] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function Menu() {
       const res = await axios.get(API_CATEGORIES);
       setCategories(res.data || []);
     } catch (err) {
-      console.error('Error fetching categories', err);
+      console.error("Error fetching categories", err);
     }
   };
 
@@ -35,23 +37,32 @@ export default function Menu() {
     try {
       const res = await axios.get(API_PRODUCTS);
       const all = res.data || [];
-      const filtered = all.filter(p => {
+
+      const filtered = all.filter((p) => {
         if (!query) return true;
         const q = query.toLowerCase();
         return (
-          (p.producto || p.Producto || '') .toString().toLowerCase().includes(q) ||
-          (p.descripcion || '') .toString().toLowerCase().includes(q)
+          (p.producto || p.Producto || "")
+            .toString()
+            .toLowerCase()
+            .includes(q) ||
+          (p.descripcion || "")
+            .toString()
+            .toLowerCase()
+            .includes(q)
         );
       });
 
       const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
       setTotalPages(pages);
       if (page > pages) setPage(1);
+
       const start = (page - 1) * PAGE_SIZE;
       const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
       setProductos(pageItems);
     } catch (err) {
-      console.error('Error fetching productos', err);
+      console.error("Error fetching productos", err);
     } finally {
       setLoading(false);
     }
@@ -66,56 +77,55 @@ export default function Menu() {
   }, [page, query]);
 
   const handleSaveProducto = async (productoData, imagenFile) => {
-  try {
-    const form = new FormData();
-    const jsonBlob = new Blob([JSON.stringify(productoData)], { type: 'application/json' });
-    form.append('producto', jsonBlob);
-    if (imagenFile) form.append('imagen', imagenFile);
-
-    let res;
-    if (productoData.idProducto) {
-      res = await axios.put(`${API_PRODUCTS}/${productoData.idProducto}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+    try {
+      const form = new FormData();
+      const jsonBlob = new Blob([JSON.stringify(productoData)], {
+        type: "application/json",
       });
-    } else {
-      res = await axios.post(API_PRODUCTS, form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    }
+      form.append("producto", jsonBlob);
+      if (imagenFile) form.append("imagen", imagenFile);
 
-    // Añadimos el producto directamente a la lista sin recargar
-    setProductos(prev => {
-      const updatedProducto = res.data; // backend debe devolver el producto completo con id y url de imagen
-      const exists = prev.find(p => p.idProducto === updatedProducto.idProducto);
-      if (exists) {
-        return prev.map(p => p.idProducto === updatedProducto.idProducto ? updatedProducto : p);
+      let res;
+      if (productoData.idProducto) {
+        res = await axios.put(`${API_PRODUCTS}/${productoData.idProducto}`, form);
       } else {
-        return [updatedProducto, ...prev];
+        res = await axios.post(API_PRODUCTS, form);
       }
-    });
 
-    setShowModalProducto(false);
-    setEditingProducto(null);
-  } catch (err) {
-    console.error('Error saving producto', err);
-    alert('Error al guardar el producto. Revisa la consola.');
-  }
-};
+      const newProducto = res.data;
 
+      setProductos((prev) => {
+        const exists = prev.find((p) => p.idProducto === newProducto.idProducto);
+        if (exists) {
+          return prev.map((p) =>
+            p.idProducto === newProducto.idProducto ? newProducto : p
+          );
+        } else {
+          return [newProducto, ...prev];
+        }
+      });
 
-  const handleSaveCategoria = async (categoria) => {
+      setShowModalProducto(false);
+      setEditingProducto(null);
+    } catch (err) {
+      console.error("Error saving producto", err);
+      alert("Error al guardar el producto. Revisa la consola.");
+    }
+  };
+
+  const handleSaveCategoria = async () => {
     await fetchCategories();
     setShowModalCategoria(false);
   };
 
   const handleDeleteProducto = async (id) => {
-    if (!window.confirm('¿Eliminar producto?')) return;
+    if (!window.confirm("¿Eliminar producto?")) return;
     try {
       await axios.delete(`${API_PRODUCTS}/${id}`);
       await fetchProductos();
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar.');
+      alert("Error al eliminar.");
     }
   };
 
@@ -123,14 +133,15 @@ export default function Menu() {
     try {
       const updated = { ...producto, estado: !producto.estado };
       const form = new FormData();
-      form.append('producto', new Blob([JSON.stringify(updated)], { type: 'application/json' }));
-      await axios.put(`${API_PRODUCTS}/${producto.idProducto}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      form.append(
+        "producto",
+        new Blob([JSON.stringify(updated)], { type: "application/json" })
+      );
+      await axios.put(`${API_PRODUCTS}/${producto.idProducto}`, form);
       await fetchProductos();
     } catch (err) {
       console.error(err);
-      alert('Error al cambiar estado.');
+      alert("Error al cambiar estado.");
     }
   };
 
@@ -139,11 +150,17 @@ export default function Menu() {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="text-danger">Gestión de Productos</h1>
         <div className="d-flex gap-2">
-          <button onClick={() => setShowModalCategoria(true)} className="btn btn-danger">
+          <button
+            onClick={() => setShowModalCategoria(true)}
+            className="btn btn-danger"
+          >
             Agregar Categoría
           </button>
           <button
-            onClick={() => { setEditingProducto(null); setShowModalProducto(true); }}
+            onClick={() => {
+              setEditingProducto(null);
+              setShowModalProducto(true);
+            }}
             className="btn btn-danger"
           >
             Agregar Producto
@@ -157,11 +174,16 @@ export default function Menu() {
             <input
               type="text"
               value={query}
-              onChange={e => { setQuery(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Buscar productos..."
               className="form-control w-50"
             />
-            <small className="text-muted">Resultados por página: {PAGE_SIZE}</small>
+            <small className="text-muted">
+              Resultados por página: {PAGE_SIZE}
+            </small>
           </div>
 
           {loading ? (
@@ -183,17 +205,23 @@ export default function Menu() {
                 <tbody>
                   {productos.map((p, idx) => (
                     <tr key={p.idProducto || idx}>
-                      <td>{(page-1)*PAGE_SIZE + idx + 1}</td>
+                      <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
                       <td>{p.producto || p.Producto}</td>
                       <td>{p.precioVenta || p.PrecioVenta}</td>
-                      <td>{p.categoria?.nombreCategoria || 'Sin categoría'}</td>
+                      <td>
+                        {p.categoria?.nombreCategoria || "Sin categoría"}
+                      </td>
                       <td>
                         {p.imagen && (
                           <img
-                            src={`http://localhost:9000${p.imagen}`}
+                            src={`${API}${p.imagen}`}
                             alt={p.producto}
                             className="img-thumbnail"
-                            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
                           />
                         )}
                       </td>
@@ -205,13 +233,18 @@ export default function Menu() {
                             checked={!!p.estado}
                             onChange={() => handleToggleEstado(p)}
                           />
-                          <label className="form-check-label">{p.estado ? 'Activo' : 'Inactivo'}</label>
+                          <label className="form-check-label">
+                            {p.estado ? "Activo" : "Inactivo"}
+                          </label>
                         </div>
                       </td>
                       <td>
                         <button
                           className="btn btn-sm btn-outline-danger me-1"
-                          onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}
+                          onClick={() => {
+                            setEditingProducto(p);
+                            setShowModalProducto(true);
+                          }}
                         >
                           Editar
                         </button>
@@ -231,11 +264,13 @@ export default function Menu() {
         </div>
       </div>
 
-      {/* Modales */}
       {showModalProducto && (
         <ModalProducto
           isOpen={showModalProducto}
-          onClose={() => { setShowModalProducto(false); setEditingProducto(null); }}
+          onClose={() => {
+            setShowModalProducto(false);
+            setEditingProducto(null);
+          }}
           onSave={handleSaveProducto}
           categorias={categories}
           productoEditado={editingProducto}
