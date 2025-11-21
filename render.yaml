@@ -7,7 +7,6 @@ services:
     envVars:
       - key: VITE_API_URL
         value: "https://backend-lautaros-a1gx.onrender.com"
-    redirects:
+    rewrites:
       - source: "/*"
         destination: "/index.html"
-        status: 200
