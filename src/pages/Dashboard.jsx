@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import DashboardCard from "../components/DashboardCard";
 import DashboardChart from "../components/DashboardChart";
+import DashboardPieChart from "../components/DashboardPieChart";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -14,6 +15,7 @@ export default function Dashboard() {
   });
 
   const [ventasSemanal, setVentasSemanal] = useState([]);
+  const [platosMasVendidos, setPlatosMasVendidos] = useState([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -28,7 +30,8 @@ export default function Dashboard() {
           clientes: data.clientes,
         });
 
-        setVentasSemanal(data.ventasSemanal);
+        setVentasSemanal(data.ventasSemanal || []);
+        setPlatosMasVendidos(data.platosMasVendidos || []);
       } catch (error) {
         console.error("Error cargando dashboard", error);
       }
@@ -38,12 +41,13 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="d-flex" style={{ backgroundColor: "#ffffff", minHeight: "100vh" }}>
+    <div className="d-flex" style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
       <Sidebar />
 
       <div className="container-fluid p-4">
-        <h2 className="mb-4 text-danger">Dashboard del Restaurante</h2>
+        <h2 className="mb-4 text-danger text-center">Dashboard del Restaurante</h2>
 
+        {/* Métricas */}
         <div className="row mb-4">
           <DashboardCard title="Ventas Hoy" value={`S/ ${metrics.ventasHoy}`} />
           <DashboardCard title="Ventas Realizadas" value={metrics.ventasRealizadas} />
@@ -51,9 +55,30 @@ export default function Dashboard() {
           <DashboardCard title="Clientes" value={metrics.clientes} />
         </div>
 
+        {/* Gráficos */}
         <div className="row mb-4">
-          <div className="col-md-8">
-            <DashboardChart ventasSemanal={ventasSemanal} />
+          {/* Gráfico de ventas semanal */}
+          <div className="col-md-8 mb-4">
+            <div className="card shadow-sm h-100">
+              <div className="card-body">
+                <h5 className="card-title text-center text-danger mb-3">Ventas Semanales</h5>
+                <DashboardChart ventasSemanal={ventasSemanal} />
+              </div>
+            </div>
+          </div>
+
+          {/* Gráfico circular de platos más vendidos */}
+          <div className="col-md-4 mb-4">
+            <div className="card shadow-sm h-100">
+              <div className="card-body">
+                <h5 className="card-title text-center text-danger mb-3">Platos Más Vendidos</h5>
+                {platosMasVendidos.length > 0 ? (
+                  <DashboardPieChart platos={platosMasVendidos} />
+                ) : (
+                  <p className="text-center">No hay datos disponibles</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

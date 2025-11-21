@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Modal, Button, Table } from "react-bootstrap";
+import { Modal, Button, Table, Form, Pagination, Card, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Reportes() {
   const [ventas, setVentas] = useState([]);
   const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const ventasPorPagina = 10;
 
   useEffect(() => {
     axios
@@ -14,6 +20,26 @@ export default function Reportes() {
       .then((res) => setVentas(res.data))
       .catch((err) => console.error("Error obteniendo ventas:", err));
   }, []);
+
+  // Ordenar ventas de más reciente a más antigua
+  const ventasOrdenadas = [...ventas].sort((a, b) => b.idVenta - a.idVenta);
+
+  // Filtrar ventas por fecha
+  const ventasFiltradas = ventasOrdenadas.filter((v) => {
+    const fecha = new Date(v.fechaVenta);
+    const desde = fechaDesde ? new Date(fechaDesde) : null;
+    const hasta = fechaHasta ? new Date(fechaHasta) : null;
+
+    if (desde && fecha < desde) return false;
+    if (hasta && fecha > hasta) return false;
+    return true;
+  });
+
+  // Paginación
+  const indexUltimaVenta = paginaActual * ventasPorPagina;
+  const indexPrimeraVenta = indexUltimaVenta - ventasPorPagina;
+  const ventasPaginadas = ventasFiltradas.slice(indexPrimeraVenta, indexUltimaVenta);
+  const totalPaginas = Math.ceil(ventasFiltradas.length / ventasPorPagina);
 
   const handleVerDetalle = (idVenta) => {
     axios
@@ -30,40 +56,111 @@ export default function Reportes() {
 
   return (
     <div className="container mt-4">
-      <h2>Reportes de Ventas</h2>
+      <Card className="shadow-sm">
+        <Card.Body>
+          <Card.Title className="mb-4 text-center">Reportes de Ventas</Card.Title>
 
-      <Table striped bordered hover responsive className="mt-3">
-        <thead>
-          <tr>
-            <th>ID Venta</th>
-            <th>Cliente</th>
-            <th>Documento</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ventas.map((venta) => (
-            <tr key={venta.idVenta}>
-              <td>{venta.idVenta}</td>
-              <td>{venta.cliente?.nombre || "-"}</td>
-              <td>{venta.cliente?.documento || "-"}</td>
-              <td>S/ {venta.total?.toFixed(2)}</td>
-              <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
-              <td>
+          {/* Filtro de fechas */}
+          <Form className="mb-4">
+            <Row className="align-items-end g-3">
+              <Col xs={12} md={3}>
+                <Form.Label>Desde:</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                />
+              </Col>
+              <Col xs={12} md={3}>
+                <Form.Label>Hasta:</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => setFechaHasta(e.target.value)}
+                />
+              </Col>
+              <Col xs={12} md={2}>
                 <Button
                   variant="danger"
-                  size="sm"
-                  onClick={() => handleVerDetalle(venta.idVenta)}
+                  className="w-100"
+                  onClick={() => setPaginaActual(1)}
                 >
-                  Ver Detalle
+                  Filtrar
                 </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+              </Col>
+            </Row>
+          </Form>
+
+          {/* Tabla de ventas */}
+          <div className="table-responsive">
+            <Table striped bordered hover className="shadow-sm">
+              <thead className="table-light">
+                <tr>
+                  <th>ID Venta</th>
+                  <th>Cliente</th>
+                  <th>Documento</th>
+                  <th>Total</th>
+                  <th>Fecha</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventasPaginadas.map((venta) => (
+                  <tr key={venta.idVenta}>
+                    <td>{venta.idVenta}</td>
+                    <td>{venta.cliente?.nombre || "-"}</td>
+                    <td>{venta.cliente?.documento || "-"}</td>
+                    <td>S/ {venta.total?.toFixed(2)}</td>
+                    <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
+                    <td>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleVerDetalle(venta.idVenta)}
+                      >
+                        <i className="bi bi-eye me-1"></i> Ver Detalle
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          {/* Paginación */}
+          {totalPaginas > 1 && (
+            <div className="d-flex justify-content-center mt-3">
+              <Pagination>
+                <Pagination.First
+                  onClick={() => setPaginaActual(1)}
+                  disabled={paginaActual === 1}
+                />
+                <Pagination.Prev
+                  onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+                  disabled={paginaActual === 1}
+                />
+                {[...Array(totalPaginas)].map((_, i) => (
+                  <Pagination.Item
+                    key={i + 1}
+                    active={i + 1 === paginaActual}
+                    onClick={() => setPaginaActual(i + 1)}
+                  >
+                    {i + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  onClick={() => setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))}
+                  disabled={paginaActual === totalPaginas}
+                />
+                <Pagination.Last
+                  onClick={() => setPaginaActual(totalPaginas)}
+                  disabled={paginaActual === totalPaginas}
+                />
+              </Pagination>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
 
       {/* MODAL DETALLE */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
@@ -73,49 +170,51 @@ export default function Reportes() {
         <Modal.Body>
           {ventaSeleccionada ? (
             <div>
-              <p><strong>Cliente:</strong> {ventaSeleccionada.cliente?.nombre}</p>
-              <p><strong>Total:</strong> S/ {ventaSeleccionada.total?.toFixed(2)}</p>
-              <p>
-                <strong>Fecha:</strong>{" "}
-                {new Date(ventaSeleccionada.fechaVenta).toLocaleString()}
-              </p>
+              <Row className="mb-2">
+                <Col><strong>Cliente:</strong> {ventaSeleccionada.cliente?.nombre}</Col>
+                <Col><strong>Total:</strong> S/ {ventaSeleccionada.total?.toFixed(2)}</Col>
+              </Row>
+              <Row className="mb-3">
+                <Col><strong>Fecha:</strong> {new Date(ventaSeleccionada.fechaVenta).toLocaleString()}</Col>
+              </Row>
 
-              <Table striped bordered hover responsive>
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th>Subtotal</th>
-                    <th>Método Pago</th>
-                    <th>Monto Pagado</th>
-                    <th>Vuelto</th>
-                    <th>Código Izipay</th>
-                    <th>N° Tarjeta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ventaSeleccionada.detalles?.map((detalle) => (
-                    <tr key={detalle.idDetalleVenta}>
-                      <td>{detalle.producto?.producto}</td>
-                      <td>{detalle.producto?.descripcion}</td>
-                      <td>{detalle.cantidad || "-"}</td>
-                      <td>S/ {detalle.subtotal?.toFixed(2)}</td>
-                      <td>{detalle.metodoPago || "-"}</td>
-                      <td>{detalle.montoPagado || "-"}</td>
-                      <td>{detalle.vuelto || "-"}</td>
-                      <td>{detalle.codigoIzipay || "-"}</td>
-                      <td>{detalle.numeroTarjeta || "-"}</td>
+              <div className="table-responsive">
+                <Table striped bordered hover>
+                  <thead className="table-light">
+                    <tr>
+                      <th>Producto</th>
+                      <th>Descripción</th>
+                      <th>Cantidad</th>
+                      <th>Subtotal</th>
+                      <th>Método Pago</th>
+                      <th>Monto Pagado</th>
+                      <th>Vuelto</th>
+                      <th>Código Izipay</th>
+                      <th>N° Tarjeta</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
+                  </thead>
+                  <tbody>
+                    {ventaSeleccionada.detalles?.map((detalle) => (
+                      <tr key={detalle.idDetalleVenta}>
+                        <td>{detalle.producto?.producto}</td>
+                        <td>{detalle.producto?.descripcion}</td>
+                        <td>{detalle.cantidad || "-"}</td>
+                        <td>S/ {detalle.subtotal?.toFixed(2)}</td>
+                        <td>{detalle.metodoPago || "-"}</td>
+                        <td>{detalle.montoPagado || "-"}</td>
+                        <td>{detalle.vuelto || "-"}</td>
+                        <td>{detalle.codigoIzipay || "-"}</td>
+                        <td>{detalle.numeroTarjeta || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
             </div>
           ) : (
             <p>Cargando detalle...</p>
           )}
         </Modal.Body>
-
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cerrar

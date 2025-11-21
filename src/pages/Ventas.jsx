@@ -79,46 +79,55 @@ export default function Ventas() {
   );
 
   const finalizarVenta = async () => {
-    if (carrito.length === 0) {
-      Swal.fire("Error", "El carrito está vacío", "error");
-      return;
-    }
+  if (carrito.length === 0) {
+    Swal.fire("Error", "El carrito está vacío", "error");
+    return;
+  }
 
-    const detalles = carrito.map((item) => ({
-      producto: { idProducto: item.idProducto },
-      subtotal: item.precioVenta * item.cantidad,
-      stock: item.cantidad,
-      metodoPago,
-      montoPagado: metodoPago === "EFECTIVO" ? montoPagado : 0,
-      vuelto: metodoPago === "EFECTIVO" ? vuelto : 0,
-      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : "",
-      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : "",
-    }));
+  // Calcula el total y redondea a 2 decimales
+  const total = carrito.reduce(
+    (acc, item) => acc + item.precioVenta * item.cantidad,
+    0
+  );
+  const totalRedondeado = parseFloat(total.toFixed(2));
 
-    const request = {
-      total,
-      cliente: {
-        nombre: nombreCliente || "CLIENTE VARIOS",
-        documento: documentoCliente || 0,
-      },
-      detalles,
-    };
+  // Preparar los detalles de la venta
+  const detalles = carrito.map((item) => ({
+    producto: { idProducto: item.idProducto },
+    cantidad: item.cantidad,  // ahora se envía correctamente
+    subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)), // redondeo
+    metodoPago,
+    montoPagado: metodoPago === "EFECTIVO" ? montoPagado : 0,
+    vuelto: metodoPago === "EFECTIVO" ? vuelto : 0,
+    codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : "",
+    numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : "",
+  }));
 
-    try {
-      await axios.post("http://localhost:9000/api/ventas/registrar", request);
-      Swal.fire("Éxito", "Venta registrada correctamente", "success");
-      setCarrito([]);
-      setNombreCliente("");
-      setDocumentoCliente("");
-      setMontoPagado(0);
-      setVuelto(0);
-      setUltimos4("");
-      setCodigoIzipay("");
-    } catch (error) {
-      console.error("Error registrando venta", error);
-      Swal.fire("Error", "No se pudo registrar la venta", "error");
-    }
+  const request = {
+    total: totalRedondeado,
+    cliente: {
+      nombre: nombreCliente || "CLIENTE VARIOS",
+      documento: documentoCliente || 0,
+    },
+    detalles,
   };
+
+  try {
+    await axios.post("http://localhost:9000/api/ventas/registrar", request);
+    Swal.fire("Éxito", "Venta registrada correctamente", "success");
+    setCarrito([]);
+    setNombreCliente("");
+    setDocumentoCliente("");
+    setMontoPagado(0);
+    setVuelto(0);
+    setUltimos4("");
+    setCodigoIzipay("");
+  } catch (error) {
+    console.error("Error registrando venta", error);
+    Swal.fire("Error", "No se pudo registrar la venta", "error");
+  }
+};
+
 
   const productosFiltrados = productos.filter((p) =>
     p.producto.toLowerCase().includes(busqueda.toLowerCase()) &&
