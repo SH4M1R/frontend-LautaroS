@@ -8,6 +8,7 @@ import ArqueoCaja from "./pages/ArqueoCaja";
 import Ventas from "./pages/Ventas";
 import Empleados from "./pages/Empleados";
 import PrivateRoute from "./components/PrivateRoute";
+import RoleRoute from "./components/RoleRoute";
 
 function App() {
   const location = useLocation();
@@ -15,21 +16,34 @@ function App() {
 
   return (
     <div>
+      {/* Sidebar solo si no estamos en la página de login */}
       {!isLoginPage && <Sidebar />}
 
       <main style={{ marginLeft: isLoginPage ? "0" : "250px", padding: "10px" }}>
         <Routes>
+          {/* Ruta de login */}
           <Route path="/login" element={<Login />} />
 
+          {/* Todas las rutas protegidas por sesión */}
           <Route element={<PrivateRoute />}>
+            {/* Dashboard accesible a todos */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/empleados" element={<Empleados />} />
-            <Route path="/ArqueoCaja" element={<ArqueoCaja />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/ventas" element={<Ventas />} />
-            <Route path="/reportes" element={<Reportes />} />
+
+            {/* Rutas accesibles para VENDEDOR y ADMINISTRADOR */}
+            <Route element={<RoleRoute allowedRoles={["VENDEDOR", "ADMINISTRADOR"]} />}>
+              <Route path="/menu" element={<Menu />} />
+              <Route path="/ventas" element={<Ventas />} />
+            </Route>
+
+            {/* Rutas accesibles solo para ADMINISTRADOR */}
+            <Route element={<RoleRoute allowedRoles={["ADMINISTRADOR"]} />}>
+              <Route path="/empleados" element={<Empleados />} />
+              <Route path="/ArqueoCaja" element={<ArqueoCaja />} />
+              <Route path="/reportes" element={<Reportes />} />
+            </Route>
           </Route>
 
+          {/* Redirección por defecto */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>

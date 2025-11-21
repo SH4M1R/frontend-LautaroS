@@ -4,10 +4,12 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
+  const [loading, setLoading] = useState(true); // 👈 nuevo
 
   useEffect(() => {
     const stored = localStorage.getItem("usuario");
     if (stored) setUsuario(JSON.parse(stored));
+    setLoading(false); // ✅ después de cargar localStorage
   }, []);
 
   const login = (empleado) => {
@@ -19,6 +21,10 @@ export function AuthProvider({ children }) {
     setUsuario(null);
     localStorage.removeItem("usuario");
   };
+
+  if (loading) {
+    return <div>Cargando...</div>; // o un spinner
+  }
 
   return (
     <AuthContext.Provider value={{ usuario, login, logout }}>
