@@ -62,7 +62,10 @@ export default function ModalProducto({ isOpen, onClose, onSave, categorias = []
       return;
     }
 
-    await onSave(producto, imagenArchivo);
+    // Asegurarse de enviar precio como float
+    const productoEnviar = { ...producto, precioVenta: parseFloat(producto.precioVenta) };
+
+    await onSave(productoEnviar, imagenArchivo);
   };
 
   return (

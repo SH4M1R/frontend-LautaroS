@@ -19,6 +19,7 @@ export default function Menu() {
   const [showModalCategoria, setShowModalCategoria] = useState(false);
   const [editingProducto, setEditingProducto] = useState(null);
 
+  // --- Cargar categorías ---
   const fetchCategories = async () => {
     try {
       const res = await fetchAPI(API_CATEGORIES);
@@ -28,6 +29,7 @@ export default function Menu() {
     }
   };
 
+  // --- Cargar productos ---
   const fetchProductos = async () => {
     try {
       const res = await fetchAPI(API_PRODUCTS);
@@ -37,16 +39,17 @@ export default function Menu() {
         if (!query) return true;
         const q = query.toLowerCase();
         return (
-          (p.producto || p.Producto || "").toLowerCase().includes(q) ||
+          (p.producto || "").toLowerCase().includes(q) ||
           (p.descripcion || "").toLowerCase().includes(q)
         );
       });
 
       const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
       setTotalPages(pages);
-      if (page > pages) setPage(1);
+      const currentPage = page > pages ? 1 : page;
+      setPage(currentPage);
 
-      const start = (page - 1) * PAGE_SIZE;
+      const start = (currentPage - 1) * PAGE_SIZE;
       setProductos(filtered.slice(start, start + PAGE_SIZE));
     } catch (err) {
       console.error("Error fetching productos", err);
@@ -56,17 +59,29 @@ export default function Menu() {
   useEffect(() => { fetchCategories(); }, []);
   useEffect(() => { fetchProductos(); }, [page, query]);
 
+  // --- Guardar producto ---
   const handleSaveProducto = async (productoData, imagenFile) => {
     try {
       const form = new FormData();
-      form.append("producto", new Blob([JSON.stringify(productoData)], { type: "application/json" }));
+      form.append(
+        "producto",
+        new Blob([JSON.stringify(productoData)], { type: "application/json" })
+      );
       if (imagenFile) form.append("imagen", imagenFile);
 
       let res;
       if (productoData.idProducto) {
-        res = await fetchAPI(`${API_PRODUCTS}/${productoData.idProducto}`, { method: "PUT", data: form });
+        res = await fetchAPI(`${API_PRODUCTS}/${productoData.idProducto}`, {
+          method: "PUT",
+          data: form,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
-        res = await fetchAPI(API_PRODUCTS, { method: "POST", data: form });
+        res = await fetchAPI(API_PRODUCTS, {
+          method: "POST",
+          data: form,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
 
       const newProducto = res.data;
@@ -88,11 +103,13 @@ export default function Menu() {
     }
   };
 
+  // --- Guardar categoría ---
   const handleSaveCategoria = async () => {
     await fetchCategories();
     setShowModalCategoria(false);
   };
 
+  // --- Eliminar producto ---
   const handleDeleteProducto = async (id) => {
     if (!window.confirm("¿Eliminar producto?")) return;
     try {
@@ -104,12 +121,18 @@ export default function Menu() {
     }
   };
 
+  // --- Cambiar estado ---
   const handleToggleEstado = async (producto) => {
     try {
       const updated = { ...producto, estado: !producto.estado };
       const form = new FormData();
       form.append("producto", new Blob([JSON.stringify(updated)], { type: "application/json" }));
-      await fetchAPI(`${API_PRODUCTS}/${producto.idProducto}`, { method: "PUT", data: form });
+
+      await fetchAPI(`${API_PRODUCTS}/${producto.idProducto}`, {
+        method: "PUT",
+        data: form,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       await fetchProductos();
     } catch (err) {
       console.error(err);
@@ -122,15 +145,28 @@ export default function Menu() {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="text-danger">Gestión de Productos</h1>
         <div className="d-flex gap-2">
-          <button onClick={() => setShowModalCategoria(true)} className="btn btn-danger">Agregar Categoría</button>
-          <button onClick={() => { setEditingProducto(null); setShowModalProducto(true); }} className="btn btn-danger">Agregar Producto</button>
+          <button onClick={() => setShowModalCategoria(true)} className="btn btn-danger">
+            Agregar Categoría
+          </button>
+          <button
+            onClick={() => { setEditingProducto(null); setShowModalProducto(true); }}
+            className="btn btn-danger"
+          >
+            Agregar Producto
+          </button>
         </div>
       </div>
 
       <div className="card shadow-sm">
         <div className="card-body">
           <div className="d-flex mb-3 gap-2 align-items-center">
-            <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Buscar productos..." className="form-control w-50" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+              placeholder="Buscar productos..."
+              className="form-control w-50"
+            />
             <small className="text-muted">Resultados por página: {PAGE_SIZE}</small>
           </div>
 
@@ -151,21 +187,43 @@ export default function Menu() {
                 {productos.map((p, idx) => (
                   <tr key={p.idProducto || idx}>
                     <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
-                    <td>{p.producto || p.Producto}</td>
-                    <td>{p.precioVenta || p.PrecioVenta}</td>
+                    <td>{p.producto}</td>
+                    <td>{p.precioVenta}</td>
                     <td>{p.categoria?.nombreCategoria || "Sin categoría"}</td>
                     <td>
-                      {p.imagen && <img src={`${import.meta.env.VITE_API_URL}${p.imagen}`} alt={p.producto} className="img-thumbnail" style={{ width: "50px", height: "50px", objectFit: "cover" }} />}
+                      {p.imagen ? (
+                        <img
+                          src={`${import.meta.env.VITE_API_URL}${p.imagen}`}
+                          alt={p.producto}
+                          className="img-thumbnail"
+                          style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <span className="text-muted">Sin imagen</span>
+                      )}
                     </td>
                     <td>
                       <div className="form-check form-switch">
-                        <input className="form-check-input" type="checkbox" checked={!!p.estado} onChange={() => handleToggleEstado(p)} />
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          checked={!!p.estado}
+                          onChange={() => handleToggleEstado(p)}
+                        />
                         <label className="form-check-label">{p.estado ? "Activo" : "Inactivo"}</label>
                       </div>
                     </td>
                     <td>
-                      <button className="btn btn-sm btn-outline-danger me-1" onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}>Editar</button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.idProducto)}>Eliminar</button>
+                      <button className="btn btn-sm btn-outline-danger me-1"
+                        onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}
+                      >
+                        Editar
+                      </button>
+                      <button className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDeleteProducto(p.idProducto)}
+                      >
+                        Eliminar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -175,8 +233,22 @@ export default function Menu() {
         </div>
       </div>
 
-      {showModalProducto && <ModalProducto isOpen={showModalProducto} onClose={() => { setShowModalProducto(false); setEditingProducto(null); }} onSave={handleSaveProducto} categorias={categories} productoEditado={editingProducto} />}
-      {showModalCategoria && <ModalCategoria isOpen={showModalCategoria} onClose={() => setShowModalCategoria(false)} onSave={handleSaveCategoria} />}
+      {showModalProducto && (
+        <ModalProducto
+          isOpen={showModalProducto}
+          onClose={() => { setShowModalProducto(false); setEditingProducto(null); }}
+          onSave={handleSaveProducto}
+          categorias={categories}
+          productoEditado={editingProducto}
+        />
+      )}
+      {showModalCategoria && (
+        <ModalCategoria
+          isOpen={showModalCategoria}
+          onClose={() => setShowModalCategoria(false)}
+          onSave={handleSaveCategoria}
+        />
+      )}
     </div>
   );
 }
