@@ -8,133 +8,198 @@ export default function ArqueoCaja() {
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
   const [arqueoFinal, setArqueoFinal] = useState(null);
-
   const [showModal, setShowModal] = useState(false);
+  const [cajaHoy, setCajaHoy] = useState(null);
+  const [cargando, setCargando] = useState(true);
 
-  // ---- Cargar ventas del día ----
-  const cargarVentasDeHoy = async () => {
+  // ---- Cargar caja y ventas del día ----
+  const cargarCajaHoy = async () => {
     try {
-      const res = await axios.get("http://localhost:9050/api/ventas/hoy");
+      setCargando(true);
 
-      console.log("VENTAS HOY:", res.data);
-
-      let lista = [];
-
-      if (Array.isArray(res.data)) {
-        lista = res.data;
-      } else if (Array.isArray(res.data.ventas)) {
-        lista = res.data.ventas;
+      // 1️⃣ Obtener caja del día
+      let caja = null;
+      try {
+        const resCaja = await axios.get("http://localhost:9000/api/caja/hoy");
+        caja = resCaja.data || null;
+        setCajaHoy(caja);
+        setMontoInicial(caja?.montoInicial || "");
+      } catch {
+        console.warn("No hay caja abierta hoy");
+        setCajaHoy(null);
+        setMontoInicial("");
       }
 
-      setVentasHoy(lista);
+      // 2️⃣ Obtener todas las ventas
+      const resVentas = await axios.get("http://localhost:9000/api/ventas/listar");
+      const todasVentas = resVentas.data || [];
 
-      const total = lista.reduce((acc, venta) => acc + (venta.total || 0), 0);
+      // 3️⃣ Filtrar ventas del día
+      const hoy = new Date();
+      const ventasDeHoy = todasVentas.filter((v) => {
+        const fechaVenta = new Date(v.fechaVenta);
+        return (
+          fechaVenta.getFullYear() === hoy.getFullYear() &&
+          fechaVenta.getMonth() === hoy.getMonth() &&
+          fechaVenta.getDate() === hoy.getDate()
+        );
+      });
+
+      setVentasHoy(ventasDeHoy);
+
+      // 4️⃣ Calcular total de ventas
+      const total = ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0);
       setTotalVentas(total);
+
+      setCargando(false);
     } catch (error) {
-      console.error("Error al cargar ventas:", error);
+      console.error("Error al cargar caja:", error);
+      setCargando(false);
     }
   };
 
   useEffect(() => {
-    cargarVentasDeHoy();
+    cargarCajaHoy();
   }, []);
 
   // ---- Registrar monto inicial ----
-  const registrarMontoInicial = () => {
+  const registrarMontoInicial = async () => {
     if (!montoInicial || isNaN(montoInicial)) {
       alert("Ingresa un monto válido.");
       return;
     }
 
-    localStorage.setItem("montoInicialCaja", montoInicial);
-    alert("Monto inicial registrado correctamente.");
+    try {
+      await axios.post("http://localhost:9000/api/caja/abrir", {
+        montoInicial: parseFloat(montoInicial),
+      });
+      alert("Caja abierta correctamente.");
+      cargarCajaHoy();
+    } catch (error) {
+      console.error("Error al registrar monto inicial:", error.response?.data || error);
+      alert("No se pudo abrir la caja. Puede que ya esté abierta.");
+    }
   };
 
   // ---- Cerrar caja ----
-  const cerrarCaja = () => {
-    const montoInicialGuardado = parseFloat(localStorage.getItem("montoInicialCaja") || 0);
+  const cerrarCaja = async () => {
+    if (!cajaHoy?.idCaja) {
+      alert("No hay caja abierta para cerrar.");
+      return;
+    }
 
-    const arqueo = montoInicialGuardado + totalVentas;
-    setArqueoFinal(arqueo);
+    try {
+      const res = await axios.post("http://localhost:9000/api/caja/cerrar", {
+        idCaja: cajaHoy.idCaja,
+      });
 
-    setShowModal(true);
+      // Aquí usamos el total en caja devuelto por el backend
+      setArqueoFinal(res.data.totalEnCaja || 0);
+      setShowModal(true);
+      cargarCajaHoy();
+    } catch (error) {
+      console.error("Error al cerrar caja:", error.response?.data || error);
+      alert("No se pudo cerrar la caja.");
+    }
   };
 
   return (
-    <div className="container mt-5 p-4 bg-white rounded shadow-sm">
-      <h2 className="text-center mb-4">Arqueo de Caja</h2>
+    <div className="container mt-5 p-5 bg-light rounded shadow-lg">
+      <h2 className="text-center mb-5" style={{ color: "#b71c1c", fontWeight: "700" }}>
+        Arqueo de Caja
+      </h2>
 
       {/* Monto inicial */}
-      <div className="mb-3">
-        <label className="form-label fw-bold">Monto Inicial del Día</label>
+      <div className="mb-4 p-4 bg-white rounded shadow-sm border border-danger">
+        <label className="form-label fw-bold" style={{ color: "#b71c1c" }}>
+          Monto Inicial del Día
+        </label>
         <input
           type="number"
-          className="form-control"
+          className="form-control mb-3"
           value={montoInicial}
           onChange={(e) => setMontoInicial(e.target.value)}
           placeholder="Ingrese monto inicial..."
+          style={{ fontWeight: "500" }}
+          disabled={cajaHoy && !cajaHoy.fechaCierre}
         />
-        <button className="btn btn-primary mt-2" onClick={registrarMontoInicial}>
-          Registrar Monto Inicial
+        <button
+          className="btn btn-danger w-100"
+          onClick={registrarMontoInicial}
+          style={{ fontWeight: "600" }}
+          disabled={cajaHoy && !cajaHoy.fechaCierre}
+        >
+          {cajaHoy && !cajaHoy.fechaCierre ? "Caja ya abierta" : "Registrar Monto Inicial"}
         </button>
       </div>
 
       {/* Ventas del día */}
-      <div className="mt-4">
-        <h4 className="mb-3">Ventas del Día</h4>
+      <div className="mt-4 p-4 bg-white rounded shadow-sm border border-danger">
+        <h4 className="mb-4 text-danger fw-bold">Ventas del Día</h4>
 
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>ID Venta</th>
-              <th>Cliente</th>
-              <th>Total</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ventasHoy.length > 0 ? (
-              ventasHoy.map((v) => (
-                <tr key={v.idVenta}>
-                  <td>{v.idVenta}</td>
-                  <td>{v.cliente?.nombre}</td>
-                  <td>S/ {v.total}</td>
-                  <td>{v.fechaVenta}</td>
-                </tr>
-              ))
-            ) : (
+        {cargando ? (
+          <p>Cargando ventas...</p>
+        ) : (
+          <Table striped bordered hover responsive>
+            <thead className="table-danger">
               <tr>
-                <td colSpan="4" className="text-center">
-                  No hay ventas registradas hoy.
-                </td>
+                <th>ID Venta</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Fecha</th>
               </tr>
-            )}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {ventasHoy.length > 0 ? (
+                ventasHoy.map((v) => (
+                  <tr key={v.idVenta}>
+                    <td>{v.idVenta}</td>
+                    <td>{v.cliente?.nombre || "-"}</td>
+                    <td className="text-end">S/ {v.total?.toFixed(2) || "0.00"}</td>
+                    <td>{new Date(v.fechaVenta).toLocaleString()}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center text-muted">
+                    No hay ventas registradas hoy.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        )}
 
-        <h5 className="text-end mt-3">
-          Total vendido hoy: <strong>S/ {totalVentas}</strong>
+        <h5 className="text-end mt-3 fw-bold" style={{ color: "#b71c1c" }}>
+          Total vendido hoy: S/ {totalVentas.toFixed(2)}
         </h5>
       </div>
 
       {/* Botón cerrar caja */}
-      <div className="text-center mt-4">
-        <button className="btn btn-danger" onClick={cerrarCaja}>
+      <div className="text-center mt-5">
+        <button
+          className="btn btn-danger btn-lg px-5"
+          onClick={cerrarCaja}
+          style={{ fontWeight: "600" }}
+          disabled={!cajaHoy || cajaHoy.fechaCierre}
+        >
           Cerrar Caja
         </button>
       </div>
 
       {/* Modal resultado */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Resultado del Arqueo</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          <h5>Monto Inicial: S/ {montoInicial}</h5>
-          <h5>Total Ventas: S/ {totalVentas}</h5>
-          <hr />
-          <h4>Total en Caja: S/ {arqueoFinal}</h4>
+          <div className="text-center">
+            <h5>Monto Inicial: S/ {montoInicial}</h5>
+            <h5>Total Ventas: S/ {totalVentas.toFixed(2)}</h5>
+            <hr />
+            <h3 className="fw-bold text-danger">Total en Caja: S/ {arqueoFinal?.toFixed(2)}</h3>
+          </div>
         </Modal.Body>
 
         <Modal.Footer>

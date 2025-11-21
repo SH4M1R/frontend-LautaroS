@@ -45,7 +45,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <div className="container-fluid p-4">
-        <h2 className="mb-4 text-danger text-center">Dashboard del Restaurante</h2>
+        <h2 className="mb-4 text-danger text-center">Dashboard del Lautaro´s</h2>
 
         {/* Métricas */}
         <div className="row mb-4">
