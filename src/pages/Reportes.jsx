@@ -54,6 +54,11 @@ export default function Reportes() {
       });
   };
 
+  const handleImprimirVoucher = (idVenta) => {
+    // Abrir el PDF en otra pestaña
+    window.open(`http://localhost:9000/api/ventas/${idVenta}/boleta`, "_blank");
+  };
+
   return (
     <div className="container mt-4">
       <Card className="shadow-sm">
@@ -110,15 +115,22 @@ export default function Reportes() {
                     <td>{venta.idVenta}</td>
                     <td>{venta.cliente?.nombre || "-"}</td>
                     <td>{venta.cliente?.documento || "-"}</td>
-                    <td>S/ {venta.total?.toFixed(2)}</td>
+                    <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
                     <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
-                    <td>
+                    <td className="d-flex gap-2">
                       <Button
                         variant="danger"
                         size="sm"
                         onClick={() => handleVerDetalle(venta.idVenta)}
                       >
-                        <i className="bi bi-eye me-1"></i> Ver Detalle
+                        Ver Detalle
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleImprimirVoucher(venta.idVenta)}
+                      >
+                        Imprimir Voucher
                       </Button>
                     </td>
                   </tr>
@@ -171,8 +183,8 @@ export default function Reportes() {
           {ventaSeleccionada ? (
             <div>
               <Row className="mb-2">
-                <Col><strong>Cliente:</strong> {ventaSeleccionada.cliente?.nombre}</Col>
-                <Col><strong>Total:</strong> S/ {ventaSeleccionada.total?.toFixed(2)}</Col>
+                <Col><strong>Cliente:</strong> {ventaSeleccionada.cliente?.nombre || "-"}</Col>
+                <Col><strong>Total:</strong> S/ {ventaSeleccionada.total?.toFixed(2) || "0.00"}</Col>
               </Row>
               <Row className="mb-3">
                 <Col><strong>Fecha:</strong> {new Date(ventaSeleccionada.fechaVenta).toLocaleString()}</Col>
@@ -194,19 +206,25 @@ export default function Reportes() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ventaSeleccionada.detalles?.map((detalle) => (
-                      <tr key={detalle.idDetalleVenta}>
-                        <td>{detalle.producto?.producto}</td>
-                        <td>{detalle.producto?.descripcion}</td>
-                        <td>{detalle.cantidad || "-"}</td>
-                        <td>S/ {detalle.subtotal?.toFixed(2)}</td>
-                        <td>{detalle.metodoPago || "-"}</td>
-                        <td>{detalle.montoPagado || "-"}</td>
-                        <td>{detalle.vuelto || "-"}</td>
-                        <td>{detalle.codigoIzipay || "-"}</td>
-                        <td>{detalle.numeroTarjeta || "-"}</td>
+                    {ventaSeleccionada.detalles && ventaSeleccionada.detalles.length > 0 ? (
+                      ventaSeleccionada.detalles.map((detalle) => (
+                        <tr key={detalle.idDetalleVenta}>
+                          <td>{detalle.producto?.producto || "-"}</td>
+                          <td>{detalle.producto?.descripcion || "-"}</td>
+                          <td>{detalle.cantidad || 0}</td>
+                          <td>S/ {detalle.subtotal?.toFixed(2) || "0.00"}</td>
+                          <td>{detalle.metodoPago || "-"}</td>
+                          <td>{detalle.montoPagado?.toFixed(2) || "0.00"}</td>
+                          <td>{detalle.vuelto?.toFixed(2) || "0.00"}</td>
+                          <td>{detalle.codigoIzipay || "-"}</td>
+                          <td>{detalle.numeroTarjeta || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" className="text-center">No hay detalles</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </Table>
               </div>

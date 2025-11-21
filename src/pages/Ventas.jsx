@@ -17,8 +17,9 @@ export default function Ventas() {
   const [montoPagado, setMontoPagado] = useState(0);
   const [vuelto, setVuelto] = useState(0);
   const [ultimos4, setUltimos4] = useState("");
-  const [codigoIzipay, setCodigoIzipay] = useState(0);
+  const [codigoIzipay, setCodigoIzipay] = useState("");
 
+  // =================== CARGA DE CATEGORÍAS Y PRODUCTOS ===================
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
@@ -42,6 +43,7 @@ export default function Ventas() {
     fetchProductos();
   }, []);
 
+  // =================== CARRITO ===================
   const agregarAlCarrito = (producto) => {
     const exist = carrito.find((p) => p.idProducto === producto.idProducto);
     if (exist) {
@@ -78,66 +80,88 @@ export default function Ventas() {
     0
   );
 
+  // =================== FINALIZAR VENTA ===================
   const finalizarVenta = async () => {
-  if (carrito.length === 0) {
-    Swal.fire("Error", "El carrito está vacío", "error");
-    return;
-  }
+    if (carrito.length === 0) {
+      Swal.fire("Error", "El carrito está vacío", "error");
+      return;
+    }
 
-  // Calcula el total y redondea a 2 decimales
-  const total = carrito.reduce(
-    (acc, item) => acc + item.precioVenta * item.cantidad,
-    0
-  );
-  const totalRedondeado = parseFloat(total.toFixed(2));
+    const totalVenta = parseFloat(total.toFixed(2));
 
-  // Preparar los detalles de la venta
-  const detalles = carrito.map((item) => ({
-    producto: { idProducto: item.idProducto },
-    cantidad: item.cantidad,  // ahora se envía correctamente
-    subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)), // redondeo
-    metodoPago,
-    montoPagado: metodoPago === "EFECTIVO" ? montoPagado : 0,
-    vuelto: metodoPago === "EFECTIVO" ? vuelto : 0,
-    codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : "",
-    numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : "",
-  }));
+    // ---- DETALLES según VentaRequest ----
+    const detalles = carrito.map((item) => ({
+      producto: { idProducto: item.idProducto },
+      cantidad: item.cantidad,
+      subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)),
+      metodoPago,
+      montoPagado: parseFloat(montoPagado),
+      vuelto: parseFloat(vuelto),
+      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
+      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null
+    }));
 
-  const request = {
-    total: totalRedondeado,
-    cliente: {
+    // ---- CLIENTE según VentaRequest ----
+    const cliente = {
       nombre: nombreCliente || "CLIENTE VARIOS",
-      documento: documentoCliente || 0,
-    },
-    detalles,
-  };
+      dni: documentoCliente || "00000000"
+    };
 
-  try {
-    await axios.post("http://localhost:9000/api/ventas/registrar", request);
-    Swal.fire("Éxito", "Venta registrada correctamente", "success");
-    setCarrito([]);
-    setNombreCliente("");
-    setDocumentoCliente("");
-    setMontoPagado(0);
-    setVuelto(0);
-    setUltimos4("");
-    setCodigoIzipay("");
-  } catch (error) {
-    console.error("Error registrando venta", error);
-    Swal.fire("Error", "No se pudo registrar la venta", "error");
-  }
+    // ---- JSON final exacto ----
+    const ventaRequest = {
+      total: totalVenta,
+      cliente,
+      detalles
+    };
+
+    console.log("JSON enviado al backend:", ventaRequest);
+
+    try {
+      await axios.post(
+        "http://localhost:9000/api/ventas/registrar",
+        ventaRequest
+      );
+
+      Swal.fire("Éxito", "Venta registrada correctamente", "success");
+
+      // limpiar campos
+      setCarrito([]);
+      setNombreCliente("");
+      setDocumentoCliente("");
+      setMontoPagado(0);
+      setVuelto(0);
+      setUltimos4("");
+      setCodigoIzipay("");
+
+    } catch (error) {
+      console.error("Error registrando venta", error);
+      if (error.response) {
+        console.log("RESPUESTA BACKEND:", error.response.data);
+      }
+
+      Swal.fire("Error", "No se pudo registrar la venta", "error");
+    }
 };
 
 
-  const productosFiltrados = productos.filter((p) =>
-    p.producto.toLowerCase().includes(busqueda.toLowerCase()) &&
-    (categoriaSeleccionada === "" || p.categoria?.nombreCategoria === categoriaSeleccionada)
+  // =================== FILTRO DE PRODUCTOS ===================
+  const productosFiltrados = productos.filter(
+    (p) =>
+      p.producto.toLowerCase().includes(busqueda.toLowerCase()) &&
+      (categoriaSeleccionada === "" ||
+        p.categoria?.nombreCategoria === categoriaSeleccionada)
   );
 
+  // =================== RENDER ===================
   return (
     <div className="container-fluid" style={{ backgroundColor: "white" }}>
       <div className="row p-3">
-        <div className="col-md-8 border-end" style={{ height: "100vh", overflowY: "auto" }}>
+
+        {/* =================== COLUMNA PRODUCTOS =================== */}
+        <div
+          className="col-md-8 border-end"
+          style={{ height: "100vh", overflowY: "auto" }}
+        >
           <h4 className="fw-bold text-danger mb-3">Gestión de Ventas</h4>
 
           <div className="row mb-3">
@@ -150,6 +174,7 @@ export default function Ventas() {
                 onChange={(e) => setNombreCliente(e.target.value)}
               />
             </div>
+
             <div className="col-md-4">
               <input
                 type="text"
@@ -159,19 +184,20 @@ export default function Ventas() {
                 onChange={(e) => setDocumentoCliente(e.target.value)}
               />
             </div>
+
             <div className="col-md-4">
               <select
-              className="form-select"
-              value={categoriaSeleccionada}
-              onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-            >
-              <option value="">Todas las categorías</option>
-              {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.nombreCategoria}>
-                  {cat.nombreCategoria}
-                </option>
-              ))}
-            </select>
+                className="form-select"
+                value={categoriaSeleccionada}
+                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map((cat) => (
+                  <option key={cat.idCategoria} value={cat.nombreCategoria}>
+                    {cat.nombreCategoria}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -198,7 +224,9 @@ export default function Ventas() {
                   <div className="card-body">
                     <h6 className="fw-bold">{prod.producto}</h6>
                     <p className="text-muted">{prod.descripcion}</p>
-                    <p className="fw-bold text-danger">S/ {prod.precioVenta.toFixed(2)}</p>
+                    <p className="fw-bold text-danger">
+                      S/ {prod.precioVenta.toFixed(2)}
+                    </p>
                     <button
                       className="btn btn-danger w-100"
                       onClick={() => agregarAlCarrito(prod)}
@@ -209,21 +237,34 @@ export default function Ventas() {
                 </div>
               </div>
             ))}
+
             {productosFiltrados.length === 0 && (
-              <p className="text-center mt-4 text-muted">No hay productos que coincidan.</p>
+              <p className="text-center mt-4 text-muted">
+                No hay productos que coincidan.
+              </p>
             )}
           </div>
         </div>
 
+        {/* =================== COLUMNA CARRITO =================== */}
         <div className="col-md-4">
           <h4 className="fw-bold text-danger mb-3">Carrito</h4>
 
           <div
-            style={{ height: "300px", overflowY: "auto", border: "1px solid #dee2e6", padding: "10px" }}
+            style={{
+              height: "300px",
+              overflowY: "auto",
+              border: "1px solid #dee2e6",
+              padding: "10px",
+            }}
           >
             {carrito.map((item) => (
-              <div key={item.idProducto} className="d-flex align-items-center border-bottom py-2">
+              <div
+                key={item.idProducto}
+                className="d-flex align-items-center border-bottom py-2"
+              >
                 <span className="fw-bold flex-grow-1">{item.producto}</span>
+
                 <div className="d-flex align-items-center me-3">
                   <button
                     className="btn btn-outline-danger btn-sm"
@@ -239,9 +280,11 @@ export default function Ventas() {
                     +
                   </button>
                 </div>
+
                 <span className="fw-bold me-3">
                   S/ {(item.precioVenta * item.cantidad).toFixed(2)}
                 </span>
+
                 <button
                   className="btn btn-sm text-danger"
                   onClick={() => quitarDelCarrito(item.idProducto)}
@@ -250,7 +293,10 @@ export default function Ventas() {
                 </button>
               </div>
             ))}
-            {carrito.length === 0 && <p className="text-center mt-4 text-muted">Carrito vacío</p>}
+
+            {carrito.length === 0 && (
+              <p className="text-center mt-4 text-muted">Carrito vacío</p>
+            )}
           </div>
 
           <MetodoPago
