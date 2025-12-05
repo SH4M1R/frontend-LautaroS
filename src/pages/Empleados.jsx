@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button } from "react-bootstrap";
 import ModalEmpleado from "../components/ModalEmpleado";
+import LoaderConGIF from "../components/LoaderConGIF"; // <-- IMPORTACIÓN FALTANTE
 
 const API = import.meta.env.VITE_API_URL;
 
 export default function Empleados() {
   const [empleados, setEmpleados] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // empieza en true para mostrar loading al iniciar
   const [empleadoToEdit, setEmpleadoToEdit] = useState(null);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function Empleados() {
     try {
       const res = await fetch(`${API}/api/empleados/${idEmpleado}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
-      setEmpleados(empleados.filter(emp => emp.idEmpleado !== idEmpleado));
+      setEmpleados(empleados.filter((emp) => emp.idEmpleado !== idEmpleado));
     } catch (error) {
       console.error("Error al eliminar el empleado:", error);
       alert("Fallo al eliminar el empleado.");
@@ -54,12 +55,13 @@ export default function Empleados() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Gestión de Empleados</h3>
-        <Button variant="primary" onClick={() => handleOpenModal()}>
+        <h3 className="text-danger">Gestión de Empleados</h3>
+        <Button variant="danger" onClick={() => handleOpenModal()}>
           <i className="bi bi-person-plus-fill me-2"></i>Agregar Empleado
         </Button>
       </div>
 
+      {/* Loader SOLO dentro de la tabla */}
       <LoaderConGIF loading={loading}>
         <Table striped bordered hover responsive>
           <thead>

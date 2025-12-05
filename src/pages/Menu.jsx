@@ -20,6 +20,8 @@ export default function Menu() {
   const [showModalCategoria, setShowModalCategoria] = useState(false);
   const [editingProducto, setEditingProducto] = useState(null);
 
+  const [loading, setLoading] = useState(true);
+
   // --- Cargar categorías ---
   const fetchCategories = async () => {
     try {
@@ -33,6 +35,8 @@ export default function Menu() {
   // --- Cargar productos ---
   const fetchProductos = async () => {
     try {
+      setLoading(true);
+
       const res = await fetchAPI(API_PRODUCTS);
       const all = res.data || [];
 
@@ -54,6 +58,8 @@ export default function Menu() {
       setProductos(filtered.slice(start, start + PAGE_SIZE));
     } catch (err) {
       console.error("Error fetching productos", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,13 +81,13 @@ export default function Menu() {
         res = await fetchAPI(`${API_PRODUCTS}/${productoData.idProducto}`, {
           method: "PUT",
           data: form,
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" }
         });
       } else {
         res = await fetchAPI(API_PRODUCTS, {
           method: "POST",
           data: form,
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" }
         });
       }
 
@@ -90,7 +96,9 @@ export default function Menu() {
       setProductos((prev) => {
         const exists = prev.find((p) => p.idProducto === newProducto.idProducto);
         if (exists) {
-          return prev.map((p) => p.idProducto === newProducto.idProducto ? newProducto : p);
+          return prev.map((p) =>
+            p.idProducto === newProducto.idProducto ? newProducto : p
+          );
         } else {
           return [newProducto, ...prev];
         }
@@ -100,7 +108,7 @@ export default function Menu() {
       setEditingProducto(null);
     } catch (err) {
       console.error("Error saving producto", err);
-      alert("Error al guardar el producto. Revisa la consola.");
+      alert("Error al guardar el producto.");
     }
   };
 
@@ -132,8 +140,9 @@ export default function Menu() {
       await fetchAPI(`${API_PRODUCTS}/${producto.idProducto}`, {
         method: "PUT",
         data: form,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data" }
       });
+
       await fetchProductos();
     } catch (err) {
       console.error(err);
@@ -143,6 +152,7 @@ export default function Menu() {
 
   return (
     <div className="container my-4">
+
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="text-danger">Gestión de Productos</h1>
         <div className="d-flex gap-2">
@@ -158,33 +168,36 @@ export default function Menu() {
         </div>
       </div>
 
-      <div className="card shadow-sm">
-        <div className="card-body">
-          <div className="d-flex mb-3 gap-2 align-items-center">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-              placeholder="Buscar productos..."
-              className="form-control w-50"
-            />
-            <small className="text-muted">Resultados por página: {PAGE_SIZE}</small>
-          </div>
+      {loading ? (
+        <LoaderConGIF loading={true} />
+      ) : (
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <div className="d-flex mb-3 gap-2 align-items-center">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+                placeholder="Buscar productos..."
+                className="form-control w-50"
+              />
+              <small className="text-muted">Resultados por página: {PAGE_SIZE}</small>
+            </div>
 
-          <div className="table-responsive">
-            <table className="table table-striped table-bordered align-middle">
-              <thead className="table-danger">
-                <tr>
-                  <th>#</th>
-                  <th>Nombre</th>
-                  <th>Precio Venta</th>
-                  <th>Categoría</th>
-                  <th>Imagen</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <LoaderConGIF loading={productos.length === 0 && query === ""}>
+            <div className="table-responsive">
+              <table className="table table-striped table-bordered align-middle">
+                <thead className="table-danger">
+                  <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Precio Venta</th>
+                    <th>Categoría</th>
+                    <th>Imagen</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
                 <tbody>
                   {productos.map((p, idx) => (
                     <tr key={p.idProducto || idx}>
@@ -198,11 +211,7 @@ export default function Menu() {
                             src={`${import.meta.env.VITE_API_URL}${p.imagen}`}
                             alt={p.producto}
                             className="img-thumbnail"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover"
-                            }}
+                            style={{ width: "50px", height: "50px", objectFit: "cover" }}
                           />
                         ) : (
                           <span className="text-muted">Sin imagen</span>
@@ -241,12 +250,12 @@ export default function Menu() {
                     </tr>
                   ))}
                 </tbody>
-              </LoaderConGIF>
 
-            </table>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {showModalProducto && (
         <ModalProducto
@@ -257,6 +266,7 @@ export default function Menu() {
           productoEditado={editingProducto}
         />
       )}
+
       {showModalCategoria && (
         <ModalCategoria
           isOpen={showModalCategoria}
