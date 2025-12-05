@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { FaTrash } from "react-icons/fa";
 import MetodoPago from "../components/MetodoPago";
 import Swal from "sweetalert2";
+import LoaderConGIF from "../components/LoaderConGIF";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -40,7 +41,7 @@ export default function Ventas() {
   const cambiarCantidad = (id, cantidad) => {
     setCarrito(
       carrito.map(item => item.idProducto === id ? { ...item, cantidad: item.cantidad + cantidad } : item)
-             .filter(item => item.cantidad > 0)
+        .filter(item => item.cantidad > 0)
     );
   };
 
@@ -115,23 +116,41 @@ export default function Ventas() {
             <input type="text" className="form-control" placeholder="Buscar productos..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
           </div>
 
-          <div className="row">
-            {productosFiltrados.map(prod => (
-              <div key={prod.idProducto} className="col-md-4 mb-3">
-                <div className="card h-100 shadow-sm">
-                  <img src={`${API}${prod.imagen}`} className="card-img-top" alt={prod.producto} style={{ height: "150px", objectFit: "cover" }} />
-                  <div className="card-body">
-                    <h6 className="fw-bold">{prod.producto}</h6>
-                    <p className="text-muted">{prod.descripcion}</p>
-                    <p className="fw-bold text-danger">S/ {prod.precioVenta.toFixed(2)}</p>
-                    <button className="btn btn-danger w-100" onClick={() => agregarAlCarrito(prod)}>Agregar</button>
+          <LoaderConGIF loading={productos.length === 0}>
+            <div className="row">
+              {productosFiltrados.map(prod => (
+                <div key={prod.idProducto} className="col-md-4 mb-3">
+                  <div className="card h-100 shadow-sm">
+                    <img
+                      src={`${API}${prod.imagen}`}
+                      className="card-img-top"
+                      alt={prod.producto}
+                      style={{ height: "150px", objectFit: "cover" }}
+                    />
+                    <div className="card-body">
+                      <h6 className="fw-bold">{prod.producto}</h6>
+                      <p className="text-muted">{prod.descripcion}</p>
+                      <p className="fw-bold text-danger">
+                        S/ {prod.precioVenta.toFixed(2)}
+                      </p>
+                      <button
+                        className="btn btn-danger w-100"
+                        onClick={() => agregarAlCarrito(prod)}
+                      >
+                        Agregar
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {productosFiltrados.length === 0 && <p className="text-center mt-4 text-muted">No hay productos que coincidan.</p>}
-          </div>
+              {productosFiltrados.length === 0 && (
+                <p className="text-center mt-4 text-muted">
+                  No hay productos que coincidan.
+                </p>
+              )}
+            </div>
+          </LoaderConGIF>
         </div>
 
         {/* COLUMNA CARRITO */}

@@ -26,7 +26,7 @@ export default function Empleados() {
       setLoading(false);
     }
   };
-  
+
   const handleOpenModal = (empleado = null) => {
     setEmpleadoToEdit(empleado);
     setShowModal(true);
@@ -60,9 +60,7 @@ export default function Empleados() {
         </Button>
       </div>
 
-      {loading ? (
-        <p>Cargando empleados...</p>
-      ) : (
+      <LoaderConGIF loading={loading}>
         <Table striped bordered hover responsive>
           <thead>
             <tr>
@@ -81,10 +79,19 @@ export default function Empleados() {
                 <td>{emp.username}</td>
                 <td>{emp.rol?.rol}</td>
                 <td>
-                  <Button variant="warning" size="sm" className="me-2" onClick={() => handleOpenModal(emp)}>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleOpenModal(emp)}
+                  >
                     <i className="bi bi-pencil-square"></i>
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(emp.idEmpleado)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDelete(emp.idEmpleado)}
+                  >
                     <i className="bi bi-trash-fill"></i>
                   </Button>
                 </td>
@@ -92,7 +99,7 @@ export default function Empleados() {
             ))}
           </tbody>
         </Table>
-      )}
+      </LoaderConGIF>
 
       <ModalEmpleado
         show={showModal}

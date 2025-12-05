@@ -46,7 +46,7 @@ export default function Dashboard() {
     <div className="d-flex" style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
       <Sidebar />
       <div className="container-fluid p-4">
-        <h2 className="mb-4 text-danger text-center">Dashboard de la intranet´s</h2>
+        <h2 className="mb-4 text-danger text-center">Dashboard del Lautaro´s</h2>
 
         <div className="row mb-4">
           <DashboardCard title="Ventas Hoy" value={`S/ ${metrics.ventasHoy}`} />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../api";
 import ModalProducto from "../components/ModalProducto";
 import ModalCategoria from "../components/ModalCategoria";
+import LoaderConGIF from "../components/LoaderConGIF";
 
 const PAGE_SIZE = 20;
 
@@ -183,51 +184,65 @@ export default function Menu() {
                   <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                {productos.map((p, idx) => (
-                  <tr key={p.idProducto || idx}>
-                    <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
-                    <td>{p.producto}</td>
-                    <td>{p.precioVenta}</td>
-                    <td>{p.categoria?.nombreCategoria || "Sin categoría"}</td>
-                    <td>
-                      {p.imagen ? (
-                        <img
-                          src={`${import.meta.env.VITE_API_URL}${p.imagen}`}
-                          alt={p.producto}
-                          className="img-thumbnail"
-                          style={{ width: "50px", height: "50px", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <span className="text-muted">Sin imagen</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          checked={!!p.estado}
-                          onChange={() => handleToggleEstado(p)}
-                        />
-                        <label className="form-check-label">{p.estado ? "Activo" : "Inactivo"}</label>
-                      </div>
-                    </td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-danger me-1"
-                        onClick={() => { setEditingProducto(p); setShowModalProducto(true); }}
-                      >
-                        Editar
-                      </button>
-                      <button className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDeleteProducto(p.idProducto)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              <LoaderConGIF loading={productos.length === 0 && query === ""}>
+                <tbody>
+                  {productos.map((p, idx) => (
+                    <tr key={p.idProducto || idx}>
+                      <td>{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                      <td>{p.producto}</td>
+                      <td>{p.precioVenta}</td>
+                      <td>{p.categoria?.nombreCategoria || "Sin categoría"}</td>
+                      <td>
+                        {p.imagen ? (
+                          <img
+                            src={`${import.meta.env.VITE_API_URL}${p.imagen}`}
+                            alt={p.producto}
+                            className="img-thumbnail"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover"
+                            }}
+                          />
+                        ) : (
+                          <span className="text-muted">Sin imagen</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={!!p.estado}
+                            onChange={() => handleToggleEstado(p)}
+                          />
+                          <label className="form-check-label">
+                            {p.estado ? "Activo" : "Inactivo"}
+                          </label>
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-outline-danger me-1"
+                          onClick={() => {
+                            setEditingProducto(p);
+                            setShowModalProducto(true);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleDeleteProducto(p.idProducto)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </LoaderConGIF>
+
             </table>
           </div>
         </div>
