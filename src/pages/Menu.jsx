@@ -34,6 +34,7 @@ export default function Menu() {
 
   const [loading, setLoading] = useState(true);
 
+  // ✔ Debounced query evita cargar mientras escribes
   const debouncedQuery = useDebounce(query, 300);
 
   // --- Cargar categorías ---
@@ -54,6 +55,7 @@ export default function Menu() {
       const res = await fetchAPI(API_PRODUCTS);
       const all = res.data || [];
 
+      // ✔ Filtrado usando debouncedQuery (NO muestra loading mientras escribes)
       const filtered = all.filter((p) => {
         if (!debouncedQuery) return true;
         const q = debouncedQuery.toLowerCase();
@@ -78,6 +80,8 @@ export default function Menu() {
   };
 
   useEffect(() => { fetchCategories(); }, []);
+
+  // ✔ Se recarga solo cuando cambia de página o termina el debounce
   useEffect(() => { fetchProductos(); }, [page, debouncedQuery]);
 
   // --- Guardar producto ---
@@ -107,7 +111,7 @@ export default function Menu() {
 
       const newProducto = res.data;
 
-      // Actualización local instantánea
+      // ✔ Actualización local instantánea (sin recargar tabla)
       setProductos((prev) => {
         const exists = prev.find((p) => p.idProducto === newProducto.idProducto);
         if (exists) {
@@ -145,7 +149,7 @@ export default function Menu() {
     }
   };
 
-  // --- Cambiar estado (SIN refrescar tabla completa) ---
+  // --- Cambiar estado SIN recargar toda la tabla ---
   const handleToggleEstado = async (producto) => {
     try {
       const updated = { ...producto, estado: !producto.estado };
@@ -158,7 +162,7 @@ export default function Menu() {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      // Actualización local INSTANTÁNEA
+      // ✔ Actualización instantánea
       setProductos((prev) =>
         prev.map((p) =>
           p.idProducto === producto.idProducto ? { ...p, estado: updated.estado } : p
