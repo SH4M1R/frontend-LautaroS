@@ -6,6 +6,18 @@ import LoaderConGIF from "../components/LoaderConGIF";
 
 const PAGE_SIZE = 20;
 
+// 🔥 Debounce para la búsqueda
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
 export default function Menu() {
   const API_PRODUCTS = "/api/productos";
   const API_CATEGORIES = "/api/categorias";
@@ -21,6 +33,8 @@ export default function Menu() {
   const [editingProducto, setEditingProducto] = useState(null);
 
   const [loading, setLoading] = useState(true);
+
+  const debouncedQuery = useDebounce(query, 300);
 
   // --- Cargar categorías ---
   const fetchCategories = async () => {
@@ -41,8 +55,8 @@ export default function Menu() {
       const all = res.data || [];
 
       const filtered = all.filter((p) => {
-        if (!query) return true;
-        const q = query.toLowerCase();
+        if (!debouncedQuery) return true;
+        const q = debouncedQuery.toLowerCase();
         return (
           (p.producto || "").toLowerCase().includes(q) ||
           (p.descripcion || "").toLowerCase().includes(q)
@@ -64,7 +78,7 @@ export default function Menu() {
   };
 
   useEffect(() => { fetchCategories(); }, []);
-  useEffect(() => { fetchProductos(); }, [page, query]);
+  useEffect(() => { fetchProductos(); }, [page, debouncedQuery]);
 
   // --- Guardar producto ---
   const handleSaveProducto = async (productoData, imagenFile) => {
@@ -93,6 +107,7 @@ export default function Menu() {
 
       const newProducto = res.data;
 
+      // Actualización local instantánea
       setProductos((prev) => {
         const exists = prev.find((p) => p.idProducto === newProducto.idProducto);
         if (exists) {
@@ -130,7 +145,7 @@ export default function Menu() {
     }
   };
 
-  // --- Cambiar estado ---
+  // --- Cambiar estado (SIN refrescar tabla completa) ---
   const handleToggleEstado = async (producto) => {
     try {
       const updated = { ...producto, estado: !producto.estado };
@@ -143,7 +158,12 @@ export default function Menu() {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      await fetchProductos();
+      // Actualización local INSTANTÁNEA
+      setProductos((prev) =>
+        prev.map((p) =>
+          p.idProducto === producto.idProducto ? { ...p, estado: updated.estado } : p
+        )
+      );
     } catch (err) {
       console.error(err);
       alert("Error al cambiar estado.");
