@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Modal, Button, Table } from "react-bootstrap";
+import { Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaDollarSign, FaCashRegister } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -11,8 +12,6 @@ export default function ArqueoCaja() {
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
   const [arqueoFinal, setArqueoFinal] = useState(null);
-  const [showModalCierre, setShowModalCierre] = useState(false);
-  const [showModalApertura, setShowModalApertura] = useState(false);
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -63,35 +62,47 @@ export default function ArqueoCaja() {
 
   // =================== REGISTRAR MONTO INICIAL ===================
   const registrarMontoInicial = async () => {
-    if (!montoInicial || isNaN(montoInicial)) return;
+    if (!montoInicial || isNaN(montoInicial)) {
+      return Swal.fire("Error", "Ingresa un monto válido.", "error");
+    }
 
     try {
       const res = await axios.post(`${API}/api/caja/abrir`, {
         montoInicial: parseFloat(montoInicial),
       });
 
-      // Actualizar estado con la respuesta del POST
       const cajaAbierta = res.data;
       setCajaHoy(cajaAbierta);
       setMontoInicial(cajaAbierta.montoInicial);
-      setShowModalApertura(true); // Mostrar modal de éxito
-      cargarCajaHoy();
+
+      Swal.fire("Correcto", "Caja abierta correctamente.", "success");
     } catch (error) {
       console.error("Error al abrir caja:", error.response?.data || error);
+      Swal.fire("Error", "No se pudo abrir la caja.", "error");
     }
   };
 
   // =================== CERRAR CAJA ===================
   const cerrarCaja = async () => {
-    if (!cajaHoy?.idCaja) return;
+    if (!cajaHoy?.idCaja) {
+      return Swal.fire("Error", "No hay caja abierta. Por favor abre la caja primero.", "error");
+    }
 
     try {
       const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
       setArqueoFinal(res.data.totalEnCaja || 0);
-      setShowModalCierre(true); // Mostrar modal de cierre
-      cargarCajaHoy();
+
+      Swal.fire(
+        "Correcto",
+        `Caja cerrada. Total en caja: S/ ${res.data.totalEnCaja?.toFixed(2)}`,
+        "success"
+      );
+
+      // Actualizar estado local
+      setCajaHoy({ ...cajaHoy, fechaCierre: new Date() });
     } catch (error) {
       console.error("Error al cerrar caja:", error.response?.data || error);
+      Swal.fire("Error", "No se pudo cerrar la caja.", "error");
     }
   };
 
@@ -179,36 +190,6 @@ export default function ArqueoCaja() {
           <FaDollarSign size={20} /> Cerrar Caja
         </button>
       </div>
-
-      {/* Modal apertura */}
-      <Modal show={showModalApertura} onHide={() => setShowModalApertura(false)} centered>
-        <Modal.Header closeButton className="bg-danger text-white">
-          <Modal.Title>Caja Abierta</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          <h5>Monto Inicial: S/ {montoInicial}</h5>
-          <p>La caja se abrió correctamente.</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModalApertura(false)}>Cerrar</Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal cierre */}
-      <Modal show={showModalCierre} onHide={() => setShowModalCierre(false)} centered>
-        <Modal.Header closeButton className="bg-danger text-white">
-          <Modal.Title>Resultado del Arqueo</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          <h5>Monto Inicial: S/ {montoInicial}</h5>
-          <h5>Total Ventas: S/ {totalVentas.toFixed(2)}</h5>
-          <hr />
-          <h3 className="fw-bold text-danger">Total en Caja: S/ {arqueoFinal?.toFixed(2)}</h3>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModalCierre(false)}>Cerrar</Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }
