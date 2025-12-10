@@ -11,7 +11,6 @@ export default function ArqueoCaja() {
   const [montoInicial, setMontoInicial] = useState("");
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
-  const [arqueoFinal, setArqueoFinal] = useState(null);
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -23,13 +22,16 @@ export default function ArqueoCaja() {
       // Obtener caja abierta del día
       const resCaja = await axios.get(`${API}/api/caja/hoy`);
       const caja = resCaja.data || null;
-      setCajaHoy(caja);
-      setMontoInicial(caja?.montoInicial || "");
 
-      // Cargar todas las ventas del día vinculadas a la caja abierta
-      if (caja) {
+      if (caja && !caja.fechaCierre) {
+        // Solo si la caja sigue abierta
+        setCajaHoy(caja);
+        setMontoInicial(caja.montoInicial);
         await cargarVentasHoy(caja.idCaja);
       } else {
+        // No hay caja abierta
+        setCajaHoy(null);
+        setMontoInicial("");
         setVentasHoy([]);
         setTotalVentas(0);
       }
@@ -105,7 +107,7 @@ export default function ArqueoCaja() {
 
     try {
       const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
-      setArqueoFinal(res.data.totalEnCaja || 0);
+
       Swal.fire(
         "Caja Cerrada",
         `Monto Inicial: S/ ${montoInicial}\nTotal Ventas: S/ ${totalVentas.toFixed(
@@ -113,12 +115,12 @@ export default function ArqueoCaja() {
         )}\nTotal en Caja: S/ ${res.data.totalEnCaja.toFixed(2)}`,
         "success"
       );
+
       // Limpiar estado después de cerrar
       setCajaHoy(null);
       setMontoInicial("");
       setVentasHoy([]);
       setTotalVentas(0);
-      setArqueoFinal(null);
     } catch (error) {
       console.error("Error al cerrar caja:", error.response?.data || error);
       Swal.fire("Error", "No se pudo cerrar la caja.", "error");
@@ -144,13 +146,15 @@ export default function ArqueoCaja() {
           onChange={(e) => setMontoInicial(e.target.value)}
           placeholder="Ingrese monto inicial..."
           style={{ fontWeight: "500" }}
-          disabled={cajaHoy && !cajaHoy.fechaCierre}
+          disabled={cajaHoy && !cajaHoy.fechaCierre ? false : false} 
+          // input siempre editable mientras haya caja abierta o no
         />
         <button
           className="btn btn-danger w-100"
           onClick={registrarMontoInicial}
           style={{ fontWeight: "600" }}
-          disabled={cajaHoy && !cajaHoy.fechaCierre}
+          disabled={cajaHoy && !cajaHoy.fechaCierre} 
+          // deshabilitado solo si hay caja abierta sin cerrar
         >
           <FaCashRegister size={20} /> Abrir Caja
         </button>
