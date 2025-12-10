@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Modal, Button, Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FaDollarSign, FaCashRegister } from "react-icons/fa";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -18,6 +19,7 @@ export default function ArqueoCaja() {
     try {
       setCargando(true);
 
+      // Obtener caja del día
       let caja = null;
       try {
         const resCaja = await axios.get(`${API}/api/caja/hoy`);
@@ -30,9 +32,11 @@ export default function ArqueoCaja() {
         setMontoInicial("");
       }
 
+      // Obtener todas las ventas
       const resVentas = await axios.get(`${API}/api/ventas/listar`);
       const todasVentas = resVentas.data || [];
 
+      // Filtrar ventas del día
       const hoy = new Date();
       const ventasDeHoy = todasVentas.filter((v) => {
         const fechaVenta = new Date(v.fechaVenta);
@@ -44,7 +48,9 @@ export default function ArqueoCaja() {
       });
 
       setVentasHoy(ventasDeHoy);
-      setTotalVentas(ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0));
+      setTotalVentas(
+        ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0)
+      );
 
       setCargando(false);
     } catch (error) {
@@ -57,6 +63,7 @@ export default function ArqueoCaja() {
     cargarCajaHoy();
   }, []);
 
+  // Registrar monto inicial
   const registrarMontoInicial = async () => {
     if (!montoInicial || isNaN(montoInicial)) {
       alert("Ingresa un monto válido.");
@@ -73,6 +80,7 @@ export default function ArqueoCaja() {
     }
   };
 
+  // Cerrar caja
   const cerrarCaja = async () => {
     if (!cajaHoy?.idCaja) {
       alert("No hay caja abierta para cerrar.");
@@ -96,6 +104,7 @@ export default function ArqueoCaja() {
         Arqueo de Caja
       </h2>
 
+      {/* Monto inicial */}
       <div className="mb-4 p-4 bg-white rounded shadow-sm border border-danger">
         <label className="form-label fw-bold" style={{ color: "#b71c1c" }}>
           Monto Inicial del Día
@@ -115,10 +124,11 @@ export default function ArqueoCaja() {
           style={{ fontWeight: "600" }}
           disabled={cajaHoy && !cajaHoy.fechaCierre}
         >
-          {cajaHoy && !cajaHoy.fechaCierre ? "Caja ya abierta" : "Registrar Monto Inicial"}
+          <FaCashRegister size={20} />
         </button>
       </div>
 
+      {/* Ventas del día */}
       <div className="mt-4 p-4 bg-white rounded shadow-sm border border-danger">
         <h4 className="mb-4 text-danger fw-bold">Ventas del Día</h4>
 
@@ -160,6 +170,7 @@ export default function ArqueoCaja() {
         </h5>
       </div>
 
+      {/* Botón cerrar caja */}
       <div className="text-center mt-5">
         <button
           className="btn btn-danger btn-lg px-5"
@@ -167,10 +178,11 @@ export default function ArqueoCaja() {
           style={{ fontWeight: "600" }}
           disabled={!cajaHoy || cajaHoy.fechaCierre}
         >
-          Cerrar Caja
+          <FaDollarSign size={20} />
         </button>
       </div>
 
+      {/* Modal de arqueo final */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Resultado del Arqueo</Modal.Title>

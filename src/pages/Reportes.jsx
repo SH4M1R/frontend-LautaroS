@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Modal, Button, Table, Form, Pagination, Card, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FaEye, FaPrint } from "react-icons/fa";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -68,7 +69,9 @@ export default function Reportes() {
                 <Form.Control type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
               </Col>
               <Col xs={12} md={2}>
-                <Button variant="danger" className="w-100" onClick={() => setPaginaActual(1)}>Filtrar</Button>
+                <Button variant="danger" className="w-100" onClick={() => setPaginaActual(1)}>
+                  Filtrar
+                </Button>
               </Col>
             </Row>
           </Form>
@@ -94,8 +97,12 @@ export default function Reportes() {
                     <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
                     <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
                     <td className="d-flex gap-2">
-                      <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>Ver Detalle</Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>Imprimir Voucher</Button>
+                      <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>
+                        <FaEye />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>
+                        <FaPrint />
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -121,6 +128,7 @@ export default function Reportes() {
         </Card.Body>
       </Card>
 
+      {/* Modal detalle venta */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Detalle de Venta</Modal.Title>
@@ -151,7 +159,7 @@ export default function Reportes() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ventaSeleccionada.detalles && ventaSeleccionada.detalles.length > 0 ? (
+                    {ventaSeleccionada.detalles?.length > 0 ? (
                       ventaSeleccionada.detalles.map(detalle => (
                         <tr key={detalle.idDetalleVenta}>
                           <td>{detalle.producto?.producto || "-"}</td>
