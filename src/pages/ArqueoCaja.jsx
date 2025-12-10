@@ -11,7 +11,8 @@ export default function ArqueoCaja() {
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
   const [arqueoFinal, setArqueoFinal] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showModalArqueo, setShowModalArqueo] = useState(false);
+  const [showModalApertura, setShowModalApertura] = useState(false);
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -66,15 +67,12 @@ export default function ArqueoCaja() {
 
   // Registrar monto inicial
   const registrarMontoInicial = async () => {
-    if (!montoInicial || isNaN(montoInicial)) {
-      alert("Ingresa un monto válido.");
-      return;
-    }
+    if (!montoInicial || isNaN(montoInicial)) return;
 
     try {
       await axios.post(`${API}/api/caja/abrir`, { montoInicial: parseFloat(montoInicial) });
-      alert("Caja abierta correctamente.");
-      cargarCajaHoy();
+      setShowModalApertura(true); // mostrar modal de éxito
+      cargarCajaHoy(); // actualizar la caja y monto inicial
     } catch (error) {
       console.error("Error al registrar monto inicial:", error.response?.data || error);
       alert("No se pudo abrir la caja. Puede que ya esté abierta.");
@@ -83,15 +81,12 @@ export default function ArqueoCaja() {
 
   // Cerrar caja
   const cerrarCaja = async () => {
-    if (!cajaHoy?.idCaja) {
-      alert("No hay caja abierta para cerrar.");
-      return;
-    }
+    if (!cajaHoy?.idCaja) return;
 
     try {
       const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
       setArqueoFinal(res.data.totalEnCaja || 0);
-      setShowModal(true);
+      setShowModalArqueo(true);
       cargarCajaHoy();
     } catch (error) {
       console.error("Error al cerrar caja:", error.response?.data || error);
@@ -183,8 +178,24 @@ export default function ArqueoCaja() {
         </button>
       </div>
 
+      {/* Modal de apertura de caja */}
+      <Modal show={showModalApertura} onHide={() => setShowModalApertura(false)} centered>
+        <Modal.Header closeButton className="bg-danger text-white">
+          <Modal.Title>Caja Abierta</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center">
+            <h5>La caja se abrió correctamente.</h5>
+            <h5>Monto Inicial: S/ {montoInicial}</h5>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModalApertura(false)}>Cerrar</Button>
+        </Modal.Footer>
+      </Modal>
+
       {/* Modal de arqueo final */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={showModalArqueo} onHide={() => setShowModalArqueo(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Resultado del Arqueo</Modal.Title>
         </Modal.Header>
@@ -197,7 +208,7 @@ export default function ArqueoCaja() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Cerrar</Button>
+          <Button variant="secondary" onClick={() => setShowModalArqueo(false)}>Cerrar</Button>
         </Modal.Footer>
       </Modal>
     </div>
