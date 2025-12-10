@@ -18,16 +18,18 @@ export default function ArqueoCaja() {
   const cargarCajaHoy = async () => {
     try {
       setCargando(true);
+
       const resCaja = await axios.get(`${API}/api/caja/hoy`);
       const caja = resCaja.data || null;
 
       if (caja && !caja.fechaCierre) {
+        // Mantener la caja abierta
         setCajaHoy(caja);
-        setMontoInicial(caja.montoInicial);
+        setMontoInicial(caja.montoInicial); // <-- MOSTRAR montoInicial
         await cargarVentasHoy(caja.idCaja);
       } else {
         setCajaHoy(null);
-        setMontoInicial("");
+        setMontoInicial(""); // No hay caja abierta
         setVentasHoy([]);
         setTotalVentas(0);
       }
@@ -70,16 +72,7 @@ export default function ArqueoCaja() {
 
   useEffect(() => {
     cargarCajaHoy();
-
-    // Opcional: actualizar automáticamente cada 5 segundos para ver ventas en tiempo real
-    const intervalo = setInterval(() => {
-      if (cajaHoy?.idCaja) {
-        cargarVentasHoy(cajaHoy.idCaja);
-      }
-    }, 5000);
-
-    return () => clearInterval(intervalo);
-  }, [cajaHoy?.idCaja]);
+  }, []);
 
   // =================== ABRIR CAJA ===================
   const registrarMontoInicial = async () => {
@@ -121,6 +114,7 @@ export default function ArqueoCaja() {
         "success"
       );
 
+      // Limpiar estado después de cerrar
       setCajaHoy(null);
       setMontoInicial("");
       setVentasHoy([]);
@@ -150,13 +144,13 @@ export default function ArqueoCaja() {
           onChange={(e) => setMontoInicial(e.target.value)}
           placeholder="Ingrese monto inicial..."
           style={{ fontWeight: "500" }}
-          disabled={cajaHoy && !cajaHoy.fechaCierre} // deshabilita solo si hay caja abierta
+          disabled={cajaHoy && !cajaHoy.fechaCierre} // input bloqueado solo si ya hay caja abierta
         />
         <button
           className="btn btn-danger w-100"
           onClick={registrarMontoInicial}
           style={{ fontWeight: "600" }}
-          disabled={cajaHoy && !cajaHoy.fechaCierre}
+          disabled={cajaHoy && !cajaHoy.fechaCierre} // botón bloqueado si ya hay caja abierta
         >
           <FaCashRegister size={20} /> Abrir Caja
         </button>
@@ -210,7 +204,7 @@ export default function ArqueoCaja() {
           className="btn btn-danger btn-lg px-5"
           onClick={cerrarCaja}
           style={{ fontWeight: "600" }}
-          disabled={!cajaHoy || cajaHoy.fechaCierre}
+          disabled={!cajaHoy || cajaHoy.fechaCierre} // solo habilitado si hay caja abierta
         >
           <FaDollarSign size={20} /> Cerrar Caja
         </button>
