@@ -36,14 +36,15 @@ export default function ArqueoCaja() {
       const resVentas = await axios.get(`${API}/api/ventas/listar`);
       const todasVentas = resVentas.data || [];
 
-      // Filtrar ventas del día
+      // Filtrar ventas del día y de la caja abierta
       const hoy = new Date();
       const ventasDeHoy = todasVentas.filter((v) => {
         const fechaVenta = new Date(v.fechaVenta);
         return (
           fechaVenta.getFullYear() === hoy.getFullYear() &&
           fechaVenta.getMonth() === hoy.getMonth() &&
-          fechaVenta.getDate() === hoy.getDate()
+          fechaVenta.getDate() === hoy.getDate() &&
+          v.caja?.idCaja === caja?.idCaja
         );
       });
 
@@ -124,7 +125,7 @@ export default function ArqueoCaja() {
           style={{ fontWeight: "600" }}
           disabled={cajaHoy && !cajaHoy.fechaCierre}
         >
-          <FaCashRegister size={20} />
+          <FaCashRegister size={20} /> Abrir Caja
         </button>
       </div>
 
@@ -178,7 +179,7 @@ export default function ArqueoCaja() {
           style={{ fontWeight: "600" }}
           disabled={!cajaHoy || cajaHoy.fechaCierre}
         >
-          <FaDollarSign size={20} />
+          <FaDollarSign size={20} /> Cerrar Caja
         </button>
       </div>
 

@@ -6,7 +6,6 @@ import MetodoPago from "../components/MetodoPago";
 import Swal from "sweetalert2";
 import LoaderConGIF from "../components/LoaderConGIF";
 
-// Asegúrate de que API apunte a tu backend en Render
 const API = "https://backend-lautaros-a1gx.onrender.com";
 
 export default function Ventas() {
@@ -22,18 +21,37 @@ export default function Ventas() {
   const [vuelto, setVuelto] = useState(0);
   const [ultimos4, setUltimos4] = useState("");
   const [codigoIzipay, setCodigoIzipay] = useState("");
+  const [cajaHoy, setCajaHoy] = useState(null);
 
-  // =================== CARGA DE CATEGORÍAS Y PRODUCTOS ===================
+  // =================== CARGA DE CATEGORÍAS, PRODUCTOS Y CAJA ===================
   useEffect(() => {
-    axios.get(`${API}/api/categorias`).then(res => setCategorias(res.data)).catch(err => console.error(err));
-    axios.get(`${API}/api/productos`).then(res => setProductos(res.data)).catch(err => console.error(err));
+    axios.get(`${API}/api/categorias`)
+      .then(res => setCategorias(res.data))
+      .catch(err => console.error(err));
+
+    axios.get(`${API}/api/productos`)
+      .then(res => setProductos(res.data))
+      .catch(err => console.error(err));
+
+    // Cargar caja abierta
+    const cargarCajaHoy = async () => {
+      try {
+        const res = await axios.get(`${API}/api/caja/hoy`);
+        setCajaHoy(res.data);
+      } catch (error) {
+        console.error("No hay caja abierta hoy", error);
+      }
+    };
+    cargarCajaHoy();
   }, []);
 
   // =================== CARRITO ===================
   const agregarAlCarrito = (producto) => {
     const exist = carrito.find(p => p.idProducto === producto.idProducto);
     if (exist) {
-      setCarrito(carrito.map(p => p.idProducto === producto.idProducto ? { ...p, cantidad: p.cantidad + 1 } : p));
+      setCarrito(carrito.map(p =>
+        p.idProducto === producto.idProducto ? { ...p, cantidad: p.cantidad + 1 } : p
+      ));
     } else {
       setCarrito([...carrito, { ...producto, cantidad: 1 }]);
     }
@@ -52,6 +70,10 @@ export default function Ventas() {
 
   // =================== FINALIZAR VENTA ===================
   const finalizarVenta = async () => {
+    if (!cajaHoy?.idCaja) {
+      return Swal.fire("Error", "No hay caja abierta. Por favor abre la caja primero.", "error");
+    }
+
     if (carrito.length === 0) {
       return Swal.fire("Error", "El carrito está vacío", "error");
     }
@@ -60,7 +82,6 @@ export default function Ventas() {
     const monto = parseFloat(montoPagado) || totalVenta;
     const vueltoCalculado = monto - totalVenta;
 
-    // Creamos los detalles correctamente (sin stock ni campos repetidos)
     const detalles = carrito.map(item => ({
       producto: { idProducto: item.idProducto },
       cantidad: item.cantidad,
@@ -86,7 +107,7 @@ export default function Ventas() {
       numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
       cliente,
       detalles,
-      caja: { idCaja: 1 }
+      caja: { idCaja: cajaHoy.idCaja }
     };
 
     console.log("payload venta:", JSON.stringify(ventaRequest, null, 2));
@@ -125,10 +146,12 @@ export default function Ventas() {
 
           <div className="row mb-3">
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Nombre del cliente" value={nombreCliente} onChange={e => setNombreCliente(e.target.value)} />
+              <input type="text" className="form-control" placeholder="Nombre del cliente"
+                value={nombreCliente} onChange={e => setNombreCliente(e.target.value)} />
             </div>
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Documento" value={documentoCliente} onChange={e => setDocumentoCliente(e.target.value)} />
+              <input type="text" className="form-control" placeholder="Documento"
+                value={documentoCliente} onChange={e => setDocumentoCliente(e.target.value)} />
             </div>
             <div className="col-md-4">
               <select className="form-select" value={categoriaSeleccionada} onChange={e => setCategoriaSeleccionada(e.target.value)}>
@@ -169,11 +192,8 @@ export default function Ventas() {
                   </div>
                 </div>
               ))}
-
               {productosFiltrados.length === 0 && (
-                <p className="text-center mt-4 text-muted">
-                  No hay productos que coincidan.
-                </p>
+                <p className="text-center mt-4 text-muted">No hay productos que coincidan.</p>
               )}
             </div>
           </LoaderConGIF>
