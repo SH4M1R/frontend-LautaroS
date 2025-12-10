@@ -22,17 +22,20 @@ export default function Ventas() {
   const [ultimos4, setUltimos4] = useState("");
   const [codigoIzipay, setCodigoIzipay] = useState("");
 
-  // =================== CARGA DE CATEGORÍAS Y PRODUCTOS ===================
   useEffect(() => {
-    axios.get(`${API}/api/categorias`).then(res => setCategorias(res.data)).catch(err => console.error(err));
-    axios.get(`${API}/api/productos`).then(res => setProductos(res.data)).catch(err => console.error(err));
+    axios.get(`${API}/api/categorias`).then(res => setCategorias(res.data)).catch(console.error);
+    axios.get(`${API}/api/productos`).then(res => setProductos(res.data)).catch(console.error);
   }, []);
 
-  // =================== CARRITO ===================
+  // ---------------- CARRITO ----------------
   const agregarAlCarrito = (producto) => {
     const exist = carrito.find(p => p.idProducto === producto.idProducto);
     if (exist) {
-      setCarrito(carrito.map(p => p.idProducto === producto.idProducto ? { ...p, cantidad: p.cantidad + 1 } : p));
+      setCarrito(
+        carrito.map(p =>
+          p.idProducto === producto.idProducto ? { ...p, cantidad: p.cantidad + 1 } : p
+        )
+      );
     } else {
       setCarrito([...carrito, { ...producto, cantidad: 1 }]);
     }
@@ -40,18 +43,23 @@ export default function Ventas() {
 
   const cambiarCantidad = (id, cantidad) => {
     setCarrito(
-      carrito.map(item => item.idProducto === id ? { ...item, cantidad: item.cantidad + cantidad } : item)
+      carrito
+        .map(item =>
+          item.idProducto === id ? { ...item, cantidad: item.cantidad + cantidad } : item
+        )
         .filter(item => item.cantidad > 0)
     );
   };
 
-  const quitarDelCarrito = (id) => setCarrito(carrito.filter(item => item.idProducto !== id));
+  const quitarDelCarrito = (id) =>
+    setCarrito(carrito.filter(item => item.idProducto !== id));
 
   const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
 
-  // =================== FINALIZAR VENTA ===================
+  // ---------------- FINALIZAR VENTA ----------------
   const finalizarVenta = async () => {
-    if (carrito.length === 0) return Swal.fire("Error", "El carrito está vacío", "error");
+    if (carrito.length === 0)
+      return Swal.fire("Error", "El carrito está vacío", "error");
 
     const detalles = carrito.map(item => ({
       producto: { idProducto: item.idProducto },
@@ -64,14 +72,24 @@ export default function Ventas() {
       numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null
     }));
 
-    const cliente = { nombre: nombreCliente || "CLIENTE VARIOS", dni: documentoCliente || "00000000" };
-    const ventaRequest = { total: parseFloat(total.toFixed(2)), cliente, detalles };
+    const cliente = {
+      nombre: nombreCliente.trim() || "CLIENTE VARIOS",
+      dni: documentoCliente.trim() || "00000000"
+    };
+
+    const ventaRequest = {
+      total: parseFloat(total.toFixed(2)),
+      cliente,
+      detalles
+    };
 
     try {
-      await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
+      await axios.post(`${API}/api/ventas/registrar`, ventaRequest, {
+        headers: { "Content-Type": "application/json" }
+      });
+
       Swal.fire("Éxito", "Venta registrada correctamente", "success");
 
-      // Reset
       setCarrito([]);
       setNombreCliente("");
       setDocumentoCliente("");
@@ -79,9 +97,10 @@ export default function Ventas() {
       setVuelto(0);
       setUltimos4("");
       setCodigoIzipay("");
+
     } catch (error) {
       console.error("Error registrando venta", error);
-      Swal.fire("Error", "No se pudo registrar la venta", "error");
+      Swal.fire("Error", error.response?.data || "No se pudo registrar la venta", "error");
     }
   };
 
@@ -93,27 +112,35 @@ export default function Ventas() {
   return (
     <div className="container-fluid" style={{ backgroundColor: "white" }}>
       <div className="row p-3">
-        {/* COLUMNA PRODUCTOS */}
+        {/* COL PRODUCTOS */}
         <div className="col-md-8 border-end" style={{ height: "100vh", overflowY: "auto" }}>
           <h4 className="fw-bold text-danger mb-3">Gestión de Ventas</h4>
 
           <div className="row mb-3">
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Nombre del cliente" value={nombreCliente} onChange={e => setNombreCliente(e.target.value)} />
+              <input type="text" className="form-control" placeholder="Nombre del cliente"
+                value={nombreCliente} onChange={e => setNombreCliente(e.target.value)} />
             </div>
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Documento" value={documentoCliente} onChange={e => setDocumentoCliente(e.target.value)} />
+              <input type="text" className="form-control" placeholder="Documento"
+                value={documentoCliente} onChange={e => setDocumentoCliente(e.target.value)} />
             </div>
             <div className="col-md-4">
-              <select className="form-select" value={categoriaSeleccionada} onChange={e => setCategoriaSeleccionada(e.target.value)}>
+              <select className="form-select" value={categoriaSeleccionada}
+                onChange={e => setCategoriaSeleccionada(e.target.value)}>
                 <option value="">Todas las categorías</option>
-                {categorias.map(cat => <option key={cat.idCategoria} value={cat.nombreCategoria}>{cat.nombreCategoria}</option>)}
+                {categorias.map(cat => (
+                  <option key={cat.idCategoria} value={cat.nombreCategoria}>
+                    {cat.nombreCategoria}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="mb-3">
-            <input type="text" className="form-control" placeholder="Buscar productos..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+            <input type="text" className="form-control" placeholder="Buscar productos..."
+              value={busqueda} onChange={e => setBusqueda(e.target.value)} />
           </div>
 
           <LoaderConGIF loading={productos.length === 0}>
@@ -130,13 +157,9 @@ export default function Ventas() {
                     <div className="card-body">
                       <h6 className="fw-bold">{prod.producto}</h6>
                       <p className="text-muted">{prod.descripcion}</p>
-                      <p className="fw-bold text-danger">
-                        S/ {prod.precioVenta.toFixed(2)}
-                      </p>
-                      <button
-                        className="btn btn-danger w-100"
-                        onClick={() => agregarAlCarrito(prod)}
-                      >
+                      <p className="fw-bold text-danger">S/ {prod.precioVenta.toFixed(2)}</p>
+                      <button className="btn btn-danger w-100"
+                        onClick={() => agregarAlCarrito(prod)}>
                         Agregar
                       </button>
                     </div>
@@ -153,24 +176,38 @@ export default function Ventas() {
           </LoaderConGIF>
         </div>
 
-        {/* COLUMNA CARRITO */}
+        {/* COL CARRITO */}
         <div className="col-md-4">
           <h4 className="fw-bold text-danger mb-3">Carrito</h4>
 
-          <div style={{ height: "300px", overflowY: "auto", border: "1px solid #dee2e6", padding: "10px" }}>
+          <div style={{
+            height: "300px",
+            overflowY: "auto",
+            border: "1px solid #dee2e6",
+            padding: "10px"
+          }}>
             {carrito.map(item => (
               <div key={item.idProducto} className="d-flex align-items-center border-bottom py-2">
                 <span className="fw-bold flex-grow-1">{item.producto}</span>
                 <div className="d-flex align-items-center me-3">
-                  <button className="btn btn-outline-danger btn-sm" onClick={() => cambiarCantidad(item.idProducto, -1)}>-</button>
+                  <button className="btn btn-outline-danger btn-sm"
+                    onClick={() => cambiarCantidad(item.idProducto, -1)}>-</button>
                   <span className="mx-2 fw-bold">{item.cantidad}</span>
-                  <button className="btn btn-outline-danger btn-sm" onClick={() => cambiarCantidad(item.idProducto, 1)}>+</button>
+                  <button className="btn btn-outline-danger btn-sm"
+                    onClick={() => cambiarCantidad(item.idProducto, 1)}>+</button>
                 </div>
-                <span className="fw-bold me-3">S/ {(item.precioVenta * item.cantidad).toFixed(2)}</span>
-                <button className="btn btn-sm text-danger" onClick={() => quitarDelCarrito(item.idProducto)}><FaTrash /></button>
+                <span className="fw-bold me-3">
+                  S/ {(item.precioVenta * item.cantidad).toFixed(2)}
+                </span>
+                <button className="btn btn-sm text-danger"
+                  onClick={() => quitarDelCarrito(item.idProducto)}>
+                  <FaTrash />
+                </button>
               </div>
             ))}
-            {carrito.length === 0 && <p className="text-center mt-4 text-muted">Carrito vacío</p>}
+            {carrito.length === 0 && (
+              <p className="text-center mt-4 text-muted">Carrito vacío</p>
+            )}
           </div>
 
           <MetodoPago
@@ -192,7 +229,8 @@ export default function Ventas() {
             <span className="text-danger">S/ {total.toFixed(2)}</span>
           </div>
 
-          <button className="btn btn-danger w-100 mt-3 p-3 fw-bold" onClick={finalizarVenta}>
+          <button className="btn btn-danger w-100 mt-3 p-3 fw-bold"
+            onClick={finalizarVenta}>
             Finalizar Venta
           </button>
         </div>
