@@ -50,59 +50,70 @@ export default function Ventas() {
   const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
 
   const finalizarVenta = async () => {
-    if (carrito.length === 0) return Swal.fire("Error", "El carrito está vacío", "error");
+      if (carrito.length === 0) {
+        return Swal.fire("Error", "El carrito está vacío", "error");
+      }
 
-    const detalles = carrito.map(item => ({
-      producto: { idProducto: item.idProducto },
-      stock: item.stock ?? 0,             
-      subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)),
-      metodoPago: metodoPago,
-      montoPagado: parseFloat(montoPagado) || 0,
-      vuelto: parseFloat(vuelto) || 0,
-      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
-      cantidad: item.cantidad,
-      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null
-    }));
+      // Calculamos total
+      const totalVenta = parseFloat(carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0).toFixed(2));
 
-    const cliente = {
-      nombre: nombreCliente || "CLIENTE VARIOS",
-      dni: documentoCliente || "00000000"
+      // Calculamos vuelto automáticamente si es EFECTIVO o YAPE
+      const monto = parseFloat(montoPagado) || totalVenta;
+      const vueltoCalculado = monto - totalVenta;
+
+      // Creamos los detalles correctamente
+      const detalles = carrito.map(item => ({
+        producto: { idProducto: item.idProducto },
+        stock: item.stock ?? 0,
+        subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)),
+        metodoPago: metodoPago,
+        montoPagado: monto,
+        vuelto: vueltoCalculado,
+        codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
+        numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
+        cantidad: item.cantidad
+      }));
+
+      // Cliente por defecto
+      const cliente = {
+        nombre: nombreCliente.trim() || "CLIENTE VARIOS",
+        dni: documentoCliente.trim() || "00000000"
+      };
+
+      // Payload completo
+      const ventaRequest = {
+        total: totalVenta,
+        montoPagado: monto,
+        vuelto: vueltoCalculado,
+        metodoPago: metodoPago,
+        codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
+        numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
+        cliente,
+        detalles,
+        caja: { idCaja: 1 } // Cambia si usas otra caja
+      };
+
+      console.log("payload venta:", JSON.stringify(ventaRequest, null, 2));
+
+      try {
+        await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
+        Swal.fire("Éxito", "Venta registrada correctamente", "success");
+
+        // Reset de carrito y campos
+        setCarrito([]);
+        setNombreCliente("");
+        setDocumentoCliente("");
+        setMontoPagado(0);
+        setVuelto(0);
+        setUltimos4("");
+        setCodigoIzipay("");
+        setMetodoPago("EFECTIVO");
+
+      } catch (error) {
+        console.error("Error registrando venta", error);
+        Swal.fire("Error", "No se pudo registrar la venta", "error");
+      }
     };
-
-    // Incluimos también la caja
-    const ventaRequest = {
-      total: parseFloat(total.toFixed(2)),
-      montoPagado: parseFloat(montoPagado) || 0,
-      vuelto: parseFloat(vuelto) || 0,
-      metodoPago: metodoPago,
-      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
-      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
-      cliente,
-      detalles,
-      caja: { idCaja: 1 } // <-- aquí asigna la caja correspondiente
-    };
-
-    console.log("payload venta:", JSON.stringify(ventaRequest, null, 2));
-
-    try {
-      await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
-      Swal.fire("Éxito", "Venta registrada correctamente", "success");
-
-      // Resetear carrito y campos de cliente
-      setCarrito([]);
-      setNombreCliente("");
-      setDocumentoCliente("");
-      setMontoPagado(0);
-      setVuelto(0);
-      setUltimos4("");
-      setCodigoIzipay("");
-      setMetodoPago("EFECTIVO");
-
-    } catch (error) {
-      console.error("Error registrando venta", error);
-      Swal.fire("Error", "No se pudo registrar la venta", "error");
-    }
-  };
 
 
   const productosFiltrados = productos.filter(p =>
