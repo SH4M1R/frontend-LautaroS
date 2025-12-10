@@ -11,7 +11,6 @@ export default function ArqueoCaja() {
   const [montoInicial, setMontoInicial] = useState("");
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
-  const [arqueoFinal, setArqueoFinal] = useState(null);
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -20,7 +19,7 @@ export default function ArqueoCaja() {
     try {
       setCargando(true);
 
-      // Obtener caja del día
+      // Obtener caja abierta del día
       const resCaja = await axios.get(`${API}/api/caja/hoy`);
       const caja = resCaja.data || null;
       setCajaHoy(caja);
@@ -75,10 +74,11 @@ export default function ArqueoCaja() {
       setCajaHoy(cajaAbierta);
       setMontoInicial(cajaAbierta.montoInicial);
 
-      Swal.fire("Correcto", "Caja abierta correctamente.", "success");
+      Swal.fire("Éxito", "Caja abierta correctamente", "success");
+      cargarCajaHoy();
     } catch (error) {
       console.error("Error al abrir caja:", error.response?.data || error);
-      Swal.fire("Error", "No se pudo abrir la caja.", "error");
+      Swal.fire("Error", "No se pudo abrir la caja. Puede que ya esté abierta.", "error");
     }
   };
 
@@ -90,23 +90,29 @@ export default function ArqueoCaja() {
 
     try {
       const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
-      setArqueoFinal(res.data.totalEnCaja || 0);
+      const totalEnCaja = res.data.totalEnCaja || 0;
 
       Swal.fire(
-        "Correcto",
-        `Caja cerrada. Total en caja: S/ ${res.data.totalEnCaja?.toFixed(2)}`,
+        "Caja Cerrada",
+        `Monto Inicial: S/ ${cajaHoy.montoInicial}\nTotal Ventas: S/ ${totalVentas.toFixed(
+          2
+        )}\nTotal en Caja: S/ ${totalEnCaja.toFixed(2)}`,
         "success"
       );
 
-      // Actualizar estado local
-      setCajaHoy({ ...cajaHoy, fechaCierre: new Date() });
+      // Limpiar estado de caja para evitar duplicados
+      setCajaHoy(null);
+      setMontoInicial("");
+      setVentasHoy([]);
+      setTotalVentas(0);
+
+      cargarCajaHoy();
     } catch (error) {
       console.error("Error al cerrar caja:", error.response?.data || error);
       Swal.fire("Error", "No se pudo cerrar la caja.", "error");
     }
   };
 
-  // =================== RENDER ===================
   return (
     <div className="container mt-5 p-5 bg-light rounded shadow-lg">
       <h2 className="text-center mb-5" style={{ color: "#b71c1c", fontWeight: "700" }}>
