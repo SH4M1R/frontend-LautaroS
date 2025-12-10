@@ -11,6 +11,7 @@ export default function ArqueoCaja() {
   const [montoInicial, setMontoInicial] = useState("");
   const [ventasHoy, setVentasHoy] = useState([]);
   const [totalVentas, setTotalVentas] = useState(0);
+  const [arqueoFinal, setArqueoFinal] = useState(null);
   const [cajaHoy, setCajaHoy] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -25,24 +26,13 @@ export default function ArqueoCaja() {
       setCajaHoy(caja);
       setMontoInicial(caja?.montoInicial || "");
 
-      // Obtener todas las ventas
-      const resVentas = await axios.get(`${API}/api/ventas/listar`);
-      const todasVentas = resVentas.data || [];
-
-      // Filtrar ventas del día y de la caja abierta
-      const hoy = new Date();
-      const ventasDeHoy = todasVentas.filter((v) => {
-        const fechaVenta = new Date(v.fechaVenta);
-        return (
-          fechaVenta.getFullYear() === hoy.getFullYear() &&
-          fechaVenta.getMonth() === hoy.getMonth() &&
-          fechaVenta.getDate() === hoy.getDate() &&
-          v.caja?.idCaja === caja?.idCaja
-        );
-      });
-
-      setVentasHoy(ventasDeHoy);
-      setTotalVentas(ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0));
+      // Cargar todas las ventas del día vinculadas a la caja abierta
+      if (caja) {
+        await cargarVentasHoy(caja.idCaja);
+      } else {
+        setVentasHoy([]);
+        setTotalVentas(0);
+      }
 
       setCargando(false);
     } catch (error) {
@@ -55,6 +45,31 @@ export default function ArqueoCaja() {
     }
   };
 
+  const cargarVentasHoy = async (cajaId) => {
+    try {
+      const resVentas = await axios.get(`${API}/api/ventas/listar`);
+      const todasVentas = resVentas.data || [];
+
+      const hoy = new Date();
+      const ventasDeHoy = todasVentas.filter((v) => {
+        const fechaVenta = new Date(v.fechaVenta);
+        return (
+          fechaVenta.getFullYear() === hoy.getFullYear() &&
+          fechaVenta.getMonth() === hoy.getMonth() &&
+          fechaVenta.getDate() === hoy.getDate() &&
+          v.caja?.idCaja === cajaId
+        );
+      });
+
+      setVentasHoy(ventasDeHoy);
+      setTotalVentas(ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0));
+    } catch (error) {
+      console.error("Error al cargar ventas:", error);
+      setVentasHoy([]);
+      setTotalVentas(0);
+    }
+  };
+
   useEffect(() => {
     cargarCajaHoy();
   }, []);
@@ -62,7 +77,7 @@ export default function ArqueoCaja() {
   // =================== REGISTRAR MONTO INICIAL ===================
   const registrarMontoInicial = async () => {
     if (!montoInicial || isNaN(montoInicial)) {
-      return Swal.fire("Error", "Ingresa un monto válido.", "error");
+      return Swal.fire("Error", "Ingresa un monto válido", "error");
     }
 
     try {
@@ -73,9 +88,9 @@ export default function ArqueoCaja() {
       const cajaAbierta = res.data;
       setCajaHoy(cajaAbierta);
       setMontoInicial(cajaAbierta.montoInicial);
+      await cargarVentasHoy(cajaAbierta.idCaja);
 
       Swal.fire("Éxito", "Caja abierta correctamente", "success");
-      cargarCajaHoy();
     } catch (error) {
       console.error("Error al abrir caja:", error.response?.data || error);
       Swal.fire("Error", "No se pudo abrir la caja. Puede que ya esté abierta.", "error");
@@ -90,29 +105,27 @@ export default function ArqueoCaja() {
 
     try {
       const res = await axios.post(`${API}/api/caja/cerrar`, { idCaja: cajaHoy.idCaja });
-      const totalEnCaja = res.data.totalEnCaja || 0;
-
+      setArqueoFinal(res.data.totalEnCaja || 0);
       Swal.fire(
         "Caja Cerrada",
-        `Monto Inicial: S/ ${cajaHoy.montoInicial}\nTotal Ventas: S/ ${totalVentas.toFixed(
+        `Monto Inicial: S/ ${montoInicial}\nTotal Ventas: S/ ${totalVentas.toFixed(
           2
-        )}\nTotal en Caja: S/ ${totalEnCaja.toFixed(2)}`,
+        )}\nTotal en Caja: S/ ${res.data.totalEnCaja.toFixed(2)}`,
         "success"
       );
-
-      // Limpiar estado de caja para evitar duplicados
+      // Limpiar estado después de cerrar
       setCajaHoy(null);
       setMontoInicial("");
       setVentasHoy([]);
       setTotalVentas(0);
-
-      cargarCajaHoy();
+      setArqueoFinal(null);
     } catch (error) {
       console.error("Error al cerrar caja:", error.response?.data || error);
       Swal.fire("Error", "No se pudo cerrar la caja.", "error");
     }
   };
 
+  // =================== RENDER ===================
   return (
     <div className="container mt-5 p-5 bg-light rounded shadow-lg">
       <h2 className="text-center mb-5" style={{ color: "#b71c1c", fontWeight: "700" }}>
