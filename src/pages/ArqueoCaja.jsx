@@ -18,6 +18,7 @@ export default function ArqueoCaja() {
     try {
       setCargando(true);
 
+      // Cargar caja del día
       let caja = null;
       try {
         const resCaja = await axios.get(`${API}/api/caja/hoy`);
@@ -30,6 +31,8 @@ export default function ArqueoCaja() {
         setMontoInicial("");
       }
 
+      // Cargar ventas del día directamente filtrando en backend (si existe endpoint)
+      // Si no, filtramos aquí
       const resVentas = await axios.get(`${API}/api/ventas/listar`);
       const todasVentas = resVentas.data || [];
 
@@ -43,8 +46,13 @@ export default function ArqueoCaja() {
         );
       });
 
+      // Ordenamos de más reciente a más antigua
+      ventasDeHoy.sort((a, b) => new Date(b.fechaVenta) - new Date(a.fechaVenta));
+
       setVentasHoy(ventasDeHoy);
-      setTotalVentas(ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0));
+
+      const total = ventasDeHoy.reduce((acc, v) => acc + (v.total || 0), 0);
+      setTotalVentas(total);
 
       setCargando(false);
     } catch (error) {
@@ -139,7 +147,7 @@ export default function ArqueoCaja() {
                 ventasHoy.map((v) => (
                   <tr key={v.idVenta}>
                     <td>{v.idVenta}</td>
-                    <td>{v.cliente?.nombre || "-"}</td>
+                    <td>{v.cliente?.nombre || "VARIOS"}</td>
                     <td className="text-end">S/ {v.total?.toFixed(2) || "0.00"}</td>
                     <td>{new Date(v.fechaVenta).toLocaleString()}</td>
                   </tr>
