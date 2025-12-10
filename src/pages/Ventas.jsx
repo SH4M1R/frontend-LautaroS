@@ -50,49 +50,60 @@ export default function Ventas() {
   const total = carrito.reduce((acc, item) => acc + item.precioVenta * item.cantidad, 0);
 
   const finalizarVenta = async () => {
-  if (carrito.length === 0) return Swal.fire("Error", "El carrito está vacío", "error");
+    if (carrito.length === 0) return Swal.fire("Error", "El carrito está vacío", "error");
 
-  const detalles = carrito.map(item => ({
-    producto: { idProducto: item.idProducto },
-    stock: item.stock ?? 0,             // si no tienes stock en el frontend puedes mandar 0 o el valor real
-    subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)),
-    metodoPago: metodoPago,
-    montoPagado: parseFloat(montoPagado) || 0,
-    vuelto: parseFloat(vuelto) || 0,
-    codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
-    cantidad: item.cantidad,
-    numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null
-  }));
+    const detalles = carrito.map(item => ({
+      producto: { idProducto: item.idProducto },
+      stock: item.stock ?? 0,             
+      subtotal: parseFloat((item.precioVenta * item.cantidad).toFixed(2)),
+      metodoPago: metodoPago,
+      montoPagado: parseFloat(montoPagado) || 0,
+      vuelto: parseFloat(vuelto) || 0,
+      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
+      cantidad: item.cantidad,
+      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null
+    }));
 
-  const cliente = {
-    // adapta los nombres aquí si tu ClienteRequest usa otros campos (ver nota abajo)
-    nombre: nombreCliente || "CLIENTE VARIOS",
-    dni: documentoCliente || "00000000"
+    const cliente = {
+      nombre: nombreCliente || "CLIENTE VARIOS",
+      dni: documentoCliente || "00000000"
+    };
+
+    // Incluimos también la caja
+    const ventaRequest = {
+      total: parseFloat(total.toFixed(2)),
+      montoPagado: parseFloat(montoPagado) || 0,
+      vuelto: parseFloat(vuelto) || 0,
+      metodoPago: metodoPago,
+      codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
+      numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
+      cliente,
+      detalles,
+      caja: { idCaja: 1 } // <-- aquí asigna la caja correspondiente
+    };
+
+    console.log("payload venta:", JSON.stringify(ventaRequest, null, 2));
+
+    try {
+      await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
+      Swal.fire("Éxito", "Venta registrada correctamente", "success");
+
+      // Resetear carrito y campos de cliente
+      setCarrito([]);
+      setNombreCliente("");
+      setDocumentoCliente("");
+      setMontoPagado(0);
+      setVuelto(0);
+      setUltimos4("");
+      setCodigoIzipay("");
+      setMetodoPago("EFECTIVO");
+
+    } catch (error) {
+      console.error("Error registrando venta", error);
+      Swal.fire("Error", "No se pudo registrar la venta", "error");
+    }
   };
 
-  // Incluimos también los campos raiz que tu DTO declara
-  const ventaRequest = {
-    total: parseFloat(total.toFixed(2)),
-    montoPagado: parseFloat(montoPagado) || 0,
-    vuelto: parseFloat(vuelto) || 0,
-    metodoPago: metodoPago,
-    codigoIzipay: metodoPago === "IZIPAY" ? codigoIzipay : null,
-    numeroTarjeta: metodoPago === "IZIPAY" ? ultimos4 : null,
-    cliente,
-    detalles
-  };
-
-  console.log("payload venta:", JSON.stringify(ventaRequest, null, 2)); // inspecciona antes de enviar
-
-  try {
-    await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
-    Swal.fire("Éxito", "Venta registrada correctamente", "success");
-    // reset...
-  } catch (error) {
-    console.error("Error registrando venta", error);
-    Swal.fire("Error", "No se pudo registrar la venta", "error");
-  }
-};
 
   const productosFiltrados = productos.filter(p =>
     p.producto.toLowerCase().includes(busqueda.toLowerCase()) &&
