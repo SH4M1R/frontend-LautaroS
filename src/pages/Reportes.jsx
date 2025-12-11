@@ -15,20 +15,29 @@ export default function Reportes() {
   const [fechaHasta, setFechaHasta] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [mostrarGIF, setMostrarGIF] = useState(false);
 
   const ventasPorPagina = 10;
 
-  // Cargar ventas
   useEffect(() => {
-    setLoading(true);
+    const fetchVentas = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${API}/api/ventas/listar`);
+        setVentas(res.data);
 
-    axios.get(`${API}/api/ventas/listar`)
-      .then(res => setVentas(res.data))
-      .catch(err => console.error("Error obteniendo ventas:", err))
-      .finally(() => setLoading(false));
+        setLoading(false);
+        setMostrarGIF(true);
+        setTimeout(() => setMostrarGIF(false), 1000); // gif 1s antes de mostrar tabla
+      } catch (err) {
+        console.error("Error obteniendo ventas:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchVentas();
   }, []);
 
-  // Filtrado y orden
   const ventasOrdenadas = [...ventas].sort((a, b) => b.idVenta - a.idVenta);
   const ventasFiltradas = ventasOrdenadas.filter(v => {
     const fecha = new Date(v.fechaVenta);
@@ -39,20 +48,17 @@ export default function Reportes() {
     return true;
   });
 
-  // Paginación
   const indexUltimaVenta = paginaActual * ventasPorPagina;
   const indexPrimeraVenta = indexUltimaVenta - ventasPorPagina;
   const ventasPaginadas = ventasFiltradas.slice(indexPrimeraVenta, indexUltimaVenta);
   const totalPaginas = Math.ceil(ventasFiltradas.length / ventasPorPagina);
 
-  // Detalle venta
   const handleVerDetalle = (idVenta) => {
     axios.get(`${API}/api/ventas/${idVenta}`)
       .then(res => { setVentaSeleccionada(res.data); setShowModal(true); })
       .catch(err => { console.error("Error al obtener detalle:", err); alert("No se pudo cargar el detalle."); });
   };
 
-  // Imprimir voucher
   const handleImprimirVoucher = (idVenta) => {
     window.open(`${API}/api/ventas/${idVenta}/boleta`, "_blank");
   };
@@ -81,52 +87,64 @@ export default function Reportes() {
             </Row>
           </Form>
 
-          <div className="table-responsive">
-            <Table striped bordered hover className="shadow-sm">
-              <thead className="table-light">
-                <tr>
-                  <th>ID Venta</th>
-                  <th>Cliente</th>
-                  <th>Documento</th>
-                  <th>Total</th>
-                  <th>Fecha</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
+          {/* Tabla con spinner */}
+          {loading && (
+            <div className="d-flex justify-content-center my-5">
+              <div className="spinner-border text-danger" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          )}
 
-              <tbody>
-                <LoaderConGIF loading={loading}>
-                  <>
-                    {ventasPaginadas.length === 0 && !loading ? (
-                      <tr>
-                        <td colSpan="6" className="text-center">No hay ventas</td>
+          {mostrarGIF && !loading && (
+            <div className="d-flex justify-content-center my-3">
+              <LoaderConGIF loading={true} />
+            </div>
+          )}
+
+          {!loading && !mostrarGIF && (
+            <div className="table-responsive">
+              <Table striped bordered hover className="shadow-sm">
+                <thead className="table-light">
+                  <tr>
+                    <th>ID Venta</th>
+                    <th>Cliente</th>
+                    <th>Documento</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ventasPaginadas.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center">No hay ventas</td>
+                    </tr>
+                  ) : (
+                    ventasPaginadas.map(venta => (
+                      <tr key={venta.idVenta}>
+                        <td>{venta.idVenta}</td>
+                        <td>{venta.cliente?.nombre || "-"}</td>
+                        <td>{venta.cliente?.documento || "-"}</td>
+                        <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
+                        <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
+                        <td className="d-flex gap-2">
+                          <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>
+                            <FaEye />
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>
+                            <FaPrint />
+                          </Button>
+                        </td>
                       </tr>
-                    ) : (
-                      ventasPaginadas.map(venta => (
-                        <tr key={venta.idVenta}>
-                          <td>{venta.idVenta}</td>
-                          <td>{venta.cliente?.nombre || "-"}</td>
-                          <td>{venta.cliente?.documento || "-"}</td>
-                          <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
-                          <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
-                          <td className="d-flex gap-2">
-                            <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>
-                              <FaEye />
-                            </Button>
-                            <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>
-                              <FaPrint />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </>
-                </LoaderConGIF>
-              </tbody>
-            </Table>
-          </div>
+                    ))
+                  )}
+                </tbody>
+              </Table>
+            </div>
+          )}
 
-          {totalPaginas > 1 && (
+          {totalPaginas > 1 && !loading && !mostrarGIF && (
             <div className="d-flex justify-content-center mt-3">
               <Pagination>
                 <Pagination.First onClick={() => setPaginaActual(1)} disabled={paginaActual === 1} />
@@ -144,7 +162,6 @@ export default function Reportes() {
         </Card.Body>
       </Card>
 
-      {/* Modal detalle venta */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Detalle de Venta</Modal.Title>
