@@ -14,14 +14,18 @@ export default function Reportes() {
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const ventasPorPagina = 10;
 
   // Cargar ventas
   useEffect(() => {
+    setLoading(true);
+
     axios.get(`${API}/api/ventas/listar`)
       .then(res => setVentas(res.data))
-      .catch(err => console.error("Error obteniendo ventas:", err));
+      .catch(err => console.error("Error obteniendo ventas:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Filtrado y orden
@@ -89,24 +93,35 @@ export default function Reportes() {
                   <th>Acción</th>
                 </tr>
               </thead>
+
               <tbody>
-                {ventasPaginadas.map(venta => (
-                  <tr key={venta.idVenta}>
-                    <td>{venta.idVenta}</td>
-                    <td>{venta.cliente?.nombre || "-"}</td>
-                    <td>{venta.cliente?.documento || "-"}</td>
-                    <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
-                    <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
-                    <td className="d-flex gap-2">
-                      <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>
-                        <FaEye />
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>
-                        <FaPrint />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                <LoaderConGIF loading={loading}>
+                  <>
+                    {ventasPaginadas.length === 0 && !loading ? (
+                      <tr>
+                        <td colSpan="6" className="text-center">No hay ventas</td>
+                      </tr>
+                    ) : (
+                      ventasPaginadas.map(venta => (
+                        <tr key={venta.idVenta}>
+                          <td>{venta.idVenta}</td>
+                          <td>{venta.cliente?.nombre || "-"}</td>
+                          <td>{venta.cliente?.documento || "-"}</td>
+                          <td>S/ {venta.total?.toFixed(2) || "0.00"}</td>
+                          <td>{new Date(venta.fechaVenta).toLocaleString()}</td>
+                          <td className="d-flex gap-2">
+                            <Button variant="danger" size="sm" onClick={() => handleVerDetalle(venta.idVenta)}>
+                              <FaEye />
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => handleImprimirVoucher(venta.idVenta)}>
+                              <FaPrint />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </>
+                </LoaderConGIF>
               </tbody>
             </Table>
           </div>

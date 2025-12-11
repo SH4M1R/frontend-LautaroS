@@ -4,7 +4,7 @@ import { Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaDollarSign, FaCashRegister } from "react-icons/fa";
 import Swal from "sweetalert2";
-import LoaderConGIF from "./LoaderConGIF"; // <-- AÑADIDO: spinner con GIF
+import LoaderConGIF from "../components/LoaderConGIF";// <-- AÑADIDO: spinner con GIF
 
 const API = import.meta.env.VITE_API_URL;
 
