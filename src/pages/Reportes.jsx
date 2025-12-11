@@ -3,6 +3,7 @@ import axios from "axios";
 import { Modal, Button, Table, Form, Pagination, Card, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaEye, FaPrint } from "react-icons/fa";
+import LoaderConGIF from "../components/LoaderConGIF";
 
 const API = import.meta.env.VITE_API_URL;
 

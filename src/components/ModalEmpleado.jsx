@@ -5,12 +5,13 @@ const API = import.meta.env.VITE_API_URL;
 
 const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
     const isEditing = !!empleadoData;
-    const initialData = { user: '', username: '', contrasena: '', rol: { idRol: '' } };
+    const initialData = { user: '', username: '', contrasena: '', rol: { idRol: '' }, confirmarContrasena: '' };
 
     const [data, setData] = useState(initialData);
-    const [roles, setRoles] = useState([]); 
+    const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [coincide, setCoincide] = useState(true); // <-- Validación tiempo real
 
     useEffect(() => {
         if (show) {
@@ -20,7 +21,8 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
                     user: empleadoData.user,
                     username: empleadoData.username,
                     contrasena: empleadoData.contrasena,
-                    rol: { idRol: empleadoData.rol?.idRol || '' }
+                    rol: { idRol: empleadoData.rol?.idRol || '' },
+                    confirmarContrasena: empleadoData.contrasena || '',
                 });
             } else {
                 setData(initialData);
@@ -35,7 +37,7 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
             const rolesList = await response.json();
             setRoles(rolesList);
             if (!isEditing && rolesList.length > 0) {
-                 setData(prev => ({...prev, rol: { idRol: rolesList[0].idRol }}));
+                setData(prev => ({ ...prev, rol: { idRol: rolesList[0].idRol } }));
             }
         } catch (err) {
             setError("No se pudieron cargar los roles.");
@@ -44,10 +46,16 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         if (name === 'rolId') {
             setData({ ...data, rol: { idRol: parseInt(value) } });
         } else {
             setData({ ...data, [name]: value });
+
+            // =================== VALIDACIÓN TIEMPO REAL ===================
+            if (!isEditing && (name === 'contrasena' || name === 'confirmarContrasena')) {
+                setCoincide(name === 'contrasena' ? value === data.confirmarContrasena : data.contrasena === value);
+            }
         }
     };
 
@@ -56,8 +64,14 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
         setLoading(true);
         setError(null);
 
+        if (!isEditing && data.contrasena !== data.confirmarContrasena) {
+            setError("La contraseña y su confirmación deben ser iguales.");
+            setLoading(false);
+            return;
+        }
+
         if (!data.rol.idRol) { setError("Seleccione un Rol."); setLoading(false); return; }
-        
+
         const url = isEditing ? `${API}/api/empleados/${empleadoData.idEmpleado}` : `${API}/api/empleados`;
         const method = isEditing ? 'PUT' : 'POST';
 
@@ -73,7 +87,7 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
                 throw new Error(errorText || `Error al ${isEditing ? 'actualizar' : 'crear'} empleado`);
             }
 
-            onSave(); 
+            onSave();
         } catch (err) {
             console.error('Error en operación:', err);
             setError(err.message || "Fallo en la conexión o en el servidor.");
@@ -95,7 +109,7 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
                         <Form.Label>Nombre Completo</Form.Label>
                         <Form.Control type="text" name="user" value={data.user} onChange={handleChange} required />
                     </Form.Group>
-                    
+
                     <Form.Group className="mb-3">
                         <Form.Label>Usuario (Username)</Form.Label>
                         <Form.Control type="text" name="username" value={data.username} onChange={handleChange} required />
@@ -103,12 +117,42 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
 
                     <Form.Group className="mb-3">
                         <Form.Label>Contraseña</Form.Label>
-                        <Form.Control type="password" name="contrasena" value={data.contrasena} onChange={handleChange} required={!isEditing} />
+                        <Form.Control
+                            type="password"
+                            name="contrasena"
+                            value={data.contrasena}
+                            onChange={handleChange}
+                            required={!isEditing}
+                        />
                     </Form.Group>
+
+                    {!isEditing && (
+                        <Form.Group className="mb-3">
+                            <Form.Label>Confirmar Contraseña</Form.Label>
+                            <Form.Control
+                                type="password"
+                                name="confirmarContrasena"
+                                value={data.confirmarContrasena}
+                                onChange={handleChange}
+                                required
+                            />
+                            {!coincide && (
+                                <Form.Text className="text-danger">
+                                    Las contraseñas no coinciden
+                                </Form.Text>
+                            )}
+                        </Form.Group>
+                    )}
 
                     <Form.Group className="mb-3">
                         <Form.Label>Rol</Form.Label>
-                        <Form.Select name="rolId" value={data.rol.idRol || ''} onChange={handleChange} required disabled={roles.length === 0}>
+                        <Form.Select
+                            name="rolId"
+                            value={data.rol.idRol || ''}
+                            onChange={handleChange}
+                            required
+                            disabled={roles.length === 0}
+                        >
                             <option value="" disabled>Seleccione un Rol</option>
                             {roles.map((rol) => (
                                 <option key={rol.idRol} value={rol.idRol}>
@@ -122,10 +166,10 @@ const ModalEmpleado = ({ show, onClose, onSave, empleadoData }) => {
                     <Button variant="secondary" onClick={onClose} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button 
-                        variant="primary" 
-                        type="submit" 
-                        disabled={loading || !data.rol.idRol}
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        disabled={loading || !data.rol.idRol || (!isEditing && !coincide)} // <-- Bloquea submit si no coincide
                     >
                         {loading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Guardar Empleado'}
                     </Button>

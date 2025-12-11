@@ -5,6 +5,7 @@ import DashboardChart from "../components/DashboardChart";
 import DashboardPieChart from "../components/DashboardPieChart";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import LoaderConGIF from "../components/LoaderConGIF"; // <-- AÑADIDO: spinner con GIF
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -18,10 +19,12 @@ export default function Dashboard() {
 
   const [ventasSemanal, setVentasSemanal] = useState([]);
   const [platosMasVendidos, setPlatosMasVendidos] = useState([]);
+  const [cargando, setCargando] = useState(true); // <-- AÑADIDO: estado para spinner
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        setCargando(true); // <-- spinner activo mientras carga
         const res = await axios.get(`${API}/api/dashboard`);
         const data = res.data;
 
@@ -34,8 +37,10 @@ export default function Dashboard() {
 
         setVentasSemanal(data.ventasSemanal || []);
         setPlatosMasVendidos(data.platosMasVendidos || []);
+        setCargando(false); // <-- spinner se oculta cuando termina
       } catch (error) {
         console.error("Error cargando dashboard", error);
+        setCargando(false); // <-- ocultar spinner aunque haya error
       }
     };
 
@@ -46,38 +51,44 @@ export default function Dashboard() {
     <div className="d-flex" style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
       <Sidebar />
       <div className="container-fluid p-4">
-        <h2 className="mb-4 text-danger text-center">Dashboard del Restaurante Lautaro´s</h2>
+        <h2 className="mb-4 text-danger text-center">
+          Dashboard del Restaurante Lautaro´s
+        </h2>
 
-        <div className="row mb-4">
-          <DashboardCard title="Ventas Hoy" value={`S/ ${metrics.ventasHoy}`} />
-          <DashboardCard title="Ventas Realizadas" value={metrics.ventasRealizadas} />
-          <DashboardCard title="Platos Existentes" value={metrics.platosExistentes} />
-          <DashboardCard title="Clientes" value={metrics.clientes} />
-        </div>
+        {/* =================== AÑADIDO: Spinner debajo del título =================== */}
+        <LoaderConGIF loading={cargando}>
+          {/* =================== CONTENIDO DEL DASHBOARD =================== */}
+          <div className="row mb-4">
+            <DashboardCard title="Ventas Hoy" value={`S/ ${metrics.ventasHoy}`} />
+            <DashboardCard title="Ventas Realizadas" value={metrics.ventasRealizadas} />
+            <DashboardCard title="Platos Existentes" value={metrics.platosExistentes} />
+            <DashboardCard title="Clientes" value={metrics.clientes} />
+          </div>
 
-        <div className="row mb-4">
-          <div className="col-md-8 mb-4">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h5 className="card-title text-center text-danger mb-3">Ventas Semanales</h5>
-                <DashboardChart ventasSemanal={ventasSemanal} />
+          <div className="row mb-4">
+            <div className="col-md-8 mb-4">
+              <div className="card shadow-sm h-100">
+                <div className="card-body">
+                  <h5 className="card-title text-center text-danger mb-3">Ventas Semanales</h5>
+                  <DashboardChart ventasSemanal={ventasSemanal} />
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-4 mb-4">
+              <div className="card shadow-sm h-100">
+                <div className="card-body">
+                  <h5 className="card-title text-center text-danger mb-3">Platos Más Vendidos</h5>
+                  {platosMasVendidos.length > 0 ? (
+                    <DashboardPieChart platos={platosMasVendidos} />
+                  ) : (
+                    <p className="text-center">No hay datos disponibles</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="col-md-4 mb-4">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <h5 className="card-title text-center text-danger mb-3">Platos Más Vendidos</h5>
-                {platosMasVendidos.length > 0 ? (
-                  <DashboardPieChart platos={platosMasVendidos} />
-                ) : (
-                  <p className="text-center">No hay datos disponibles</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        </LoaderConGIF>
       </div>
     </div>
   );

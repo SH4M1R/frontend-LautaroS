@@ -4,6 +4,7 @@ import { Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaDollarSign, FaCashRegister } from "react-icons/fa";
 import Swal from "sweetalert2";
+import LoaderConGIF from "./LoaderConGIF"; // <-- AÑADIDO: spinner con GIF
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -45,18 +46,24 @@ export default function ArqueoCaja() {
     }
   };
 
+  // =================== CORRECCIÓN: FILTRO DE VENTAS DEL DÍA ===================
+  // Antes no consideraba la zona horaria, ahora funciona correctamente
   const cargarVentasHoy = async (cajaId) => {
     try {
       const resVentas = await axios.get(`${API}/api/ventas/listar`);
       const todasVentas = resVentas.data || [];
 
       const hoy = new Date();
+      const yyyy = hoy.getFullYear();
+      const mm = hoy.getMonth();
+      const dd = hoy.getDate();
+
       const ventasDeHoy = todasVentas.filter((v) => {
         const fechaVenta = new Date(v.fechaVenta);
         return (
-          fechaVenta.getFullYear() === hoy.getFullYear() &&
-          fechaVenta.getMonth() === hoy.getMonth() &&
-          fechaVenta.getDate() === hoy.getDate() &&
+          fechaVenta.getFullYear() === yyyy &&
+          fechaVenta.getMonth() === mm &&
+          fechaVenta.getDate() === dd &&
           v.caja?.idCaja === cajaId
         );
       });
@@ -93,14 +100,22 @@ export default function ArqueoCaja() {
       Swal.fire("Éxito", "Caja abierta correctamente", "success");
     } catch (error) {
       console.error("Error al abrir caja:", error.response?.data || error);
-      Swal.fire("Error", "No se pudo abrir la caja. Puede que ya esté abierta.", "error");
+      Swal.fire(
+        "Error",
+        "No se pudo abrir la caja. Puede que ya esté abierta.",
+        "error"
+      );
     }
   };
 
   // =================== CERRAR CAJA ===================
   const cerrarCaja = async () => {
     if (!cajaHoy?.idCaja) {
-      return Swal.fire("Error", "No hay caja abierta. Por favor abre la caja primero.", "error");
+      return Swal.fire(
+        "Error",
+        "No hay caja abierta. Por favor abre la caja primero.",
+        "error"
+      );
     }
 
     try {
@@ -160,9 +175,8 @@ export default function ArqueoCaja() {
       <div className="mt-4 p-4 bg-white rounded shadow-sm border border-danger">
         <h4 className="mb-4 text-danger fw-bold">Ventas del Día</h4>
 
-        {cargando ? (
-          <p>Cargando ventas...</p>
-        ) : (
+        {/* =================== AÑADIDO: Spinner mientras carga ventas =================== */}
+        <LoaderConGIF loading={cargando}>
           <Table striped bordered hover responsive>
             <thead className="table-danger">
               <tr>
@@ -191,7 +205,7 @@ export default function ArqueoCaja() {
               )}
             </tbody>
           </Table>
-        )}
+        </LoaderConGIF>
 
         <h5 className="text-end mt-3 fw-bold" style={{ color: "#b71c1c" }}>
           Total vendido hoy: S/ {totalVentas.toFixed(2)}
