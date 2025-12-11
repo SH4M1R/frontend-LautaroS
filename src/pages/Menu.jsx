@@ -6,15 +6,12 @@ import LoaderConGIF from "../components/LoaderConGIF";
 
 const PAGE_SIZE = 20;
 
-// 🔥 Debounce para la búsqueda
 function useDebounce(value, delay = 300) {
   const [debounced, setDebounced] = useState(value);
-
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay);
     return () => clearTimeout(timer);
   }, [value, delay]);
-
   return debounced;
 }
 
@@ -31,13 +28,10 @@ export default function Menu() {
   const [showModalProducto, setShowModalProducto] = useState(false);
   const [showModalCategoria, setShowModalCategoria] = useState(false);
   const [editingProducto, setEditingProducto] = useState(null);
-
   const [loading, setLoading] = useState(true);
 
-  // ✔ Debounced query evita cargar mientras escribes
   const debouncedQuery = useDebounce(query, 300);
 
-  // --- Cargar categorías ---
   const fetchCategories = async () => {
     try {
       const res = await fetchAPI(API_CATEGORIES);
@@ -47,15 +41,12 @@ export default function Menu() {
     }
   };
 
-  // --- Cargar productos ---
   const fetchProductos = async () => {
     try {
       setLoading(true);
-
       const res = await fetchAPI(API_PRODUCTS);
       const all = res.data || [];
 
-      // ✔ Filtrado usando debouncedQuery (NO muestra loading mientras escribes)
       const filtered = all.filter((p) => {
         if (!debouncedQuery) return true;
         const q = debouncedQuery.toLowerCase();
@@ -80,11 +71,8 @@ export default function Menu() {
   };
 
   useEffect(() => { fetchCategories(); }, []);
-
-  // ✔ Se recarga solo cuando cambia de página o termina el debounce
   useEffect(() => { fetchProductos(); }, [page, debouncedQuery]);
 
-  // --- Guardar producto ---
   const handleSaveProducto = async (productoData, imagenFile) => {
     try {
       const form = new FormData();
@@ -110,8 +98,6 @@ export default function Menu() {
       }
 
       const newProducto = res.data;
-
-      // ✔ Actualización local instantánea (sin recargar tabla)
       setProductos((prev) => {
         const exists = prev.find((p) => p.idProducto === newProducto.idProducto);
         if (exists) {
@@ -131,13 +117,11 @@ export default function Menu() {
     }
   };
 
-  // --- Guardar categoría ---
   const handleSaveCategoria = async () => {
     await fetchCategories();
     setShowModalCategoria(false);
   };
 
-  // --- Eliminar producto ---
   const handleDeleteProducto = async (id) => {
     if (!window.confirm("¿Eliminar producto?")) return;
     try {
@@ -149,7 +133,6 @@ export default function Menu() {
     }
   };
 
-  // --- Cambiar estado SIN recargar toda la tabla ---
   const handleToggleEstado = async (producto) => {
     try {
       const updated = { ...producto, estado: !producto.estado };
@@ -162,7 +145,6 @@ export default function Menu() {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      // ✔ Actualización instantánea
       setProductos((prev) =>
         prev.map((p) =>
           p.idProducto === producto.idProducto ? { ...p, estado: updated.estado } : p
@@ -176,7 +158,6 @@ export default function Menu() {
 
   return (
     <div className="container my-4">
-
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="text-danger">Gestión de Productos</h1>
         <div className="d-flex gap-2">
@@ -221,7 +202,6 @@ export default function Menu() {
                     <th>Acciones</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {productos.map((p, idx) => (
                     <tr key={p.idProducto || idx}>
@@ -274,7 +254,6 @@ export default function Menu() {
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
           </div>

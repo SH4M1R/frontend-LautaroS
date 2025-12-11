@@ -22,18 +22,21 @@ export default function Ventas() {
   const [ultimos4, setUltimos4] = useState("");
   const [codigoIzipay, setCodigoIzipay] = useState("");
   const [cajaHoy, setCajaHoy] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // =================== CARGA DE CATEGORÍAS, PRODUCTOS Y CAJA ===================
   useEffect(() => {
+    setLoading(true);
+
     axios.get(`${API}/api/categorias`)
       .then(res => setCategorias(res.data))
       .catch(err => console.error(err));
 
     axios.get(`${API}/api/productos`)
       .then(res => setProductos(res.data))
-      .catch(err => console.error(err));
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
 
-    // Cargar caja abierta
     const cargarCajaHoy = async () => {
       try {
         const res = await axios.get(`${API}/api/caja/hoy`);
@@ -47,6 +50,7 @@ export default function Ventas() {
 
   // =================== CARRITO ===================
   const agregarAlCarrito = (producto) => {
+    if (!producto.estado) return; // no se agrega si está inactivo
     const exist = carrito.find(p => p.idProducto === producto.idProducto);
     if (exist) {
       setCarrito(carrito.map(p =>
@@ -110,8 +114,6 @@ export default function Ventas() {
       caja: { idCaja: cajaHoy.idCaja }
     };
 
-    console.log("payload venta:", JSON.stringify(ventaRequest, null, 2));
-
     try {
       await axios.post(`${API}/api/ventas/registrar`, ventaRequest);
       Swal.fire("Éxito", "Venta registrada correctamente", "success");
@@ -125,7 +127,6 @@ export default function Ventas() {
       setUltimos4("");
       setCodigoIzipay("");
       setMetodoPago("EFECTIVO");
-
     } catch (error) {
       console.error("Error registrando venta", error);
       Swal.fire("Error", "No se pudo registrar la venta", "error");
@@ -146,12 +147,28 @@ export default function Ventas() {
 
           <div className="row mb-3">
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Nombre del cliente"
-                value={nombreCliente} onChange={e => setNombreCliente(e.target.value)} />
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Nombre del cliente"
+                value={nombreCliente}
+                onChange={e => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s]/g, ""); // solo letras
+                  setNombreCliente(val);
+                }}
+              />
             </div>
             <div className="col-md-4">
-              <input type="text" className="form-control" placeholder="Documento"
-                value={documentoCliente} onChange={e => setDocumentoCliente(e.target.value)} />
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Documento"
+                value={documentoCliente}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, ""); // solo números
+                  setDocumentoCliente(val);
+                }}
+              />
             </div>
             <div className="col-md-4">
               <select className="form-select" value={categoriaSeleccionada} onChange={e => setCategoriaSeleccionada(e.target.value)}>
@@ -162,14 +179,23 @@ export default function Ventas() {
           </div>
 
           <div className="mb-3">
-            <input type="text" className="form-control" placeholder="Buscar productos..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar productos..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+            />
           </div>
 
-          <LoaderConGIF loading={productos.length === 0}>
+          <LoaderConGIF loading={loading}>
             <div className="row">
               {productosFiltrados.map(prod => (
                 <div key={prod.idProducto} className="col-md-4 mb-3">
-                  <div className="card h-100 shadow-sm">
+                  <div
+                    className="card h-100 shadow-sm"
+                    style={{ opacity: prod.estado ? 1 : 0.5 }}
+                  >
                     <img
                       src={`${API}${prod.imagen}`}
                       className="card-img-top"
@@ -185,8 +211,9 @@ export default function Ventas() {
                       <button
                         className="btn btn-danger w-100"
                         onClick={() => agregarAlCarrito(prod)}
+                        disabled={!prod.estado}
                       >
-                        Agregar
+                        {prod.estado ? "Agregar" : "Agotado"}
                       </button>
                     </div>
                   </div>
